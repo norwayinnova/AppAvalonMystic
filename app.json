@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "NewAgain",
+    "slug": "newagain-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "com.innovanor.newagain"
+    }
+  }
+}
