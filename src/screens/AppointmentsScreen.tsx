@@ -195,19 +195,11 @@ export default function AppointmentsScreen({ navigation }: any) {
     const getMinutes = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
     const newStart = getMinutes(testTime);
     const newEnd = newStart + parseInt(selectedService.duration);
-    const travelMargin = 30; 
-    
     for (const app of teamApps) {
       const existingStart = getMinutes(app.time);
       const existingEnd = existingStart + parseInt(app.duration);
       if (newStart < existingEnd && newEnd > existingStart) {
-        return { conflict: true, reason: `⚠️ Solapamiento: Ya hay una cita de ${app.time} a ${Math.floor(existingEnd/60)}:${(existingEnd%60).toString().padStart(2,'0')}.` };
-      }
-      if (newStart >= existingEnd && newStart - existingEnd < travelMargin) {
-        return { conflict: true, reason: `🚗 Falta tiempo al llegar: La cita de antes acaba a las ${Math.floor(existingEnd/60)}:${(existingEnd%60).toString().padStart(2,'0')}. Solo tienes ${newStart - existingEnd} min para conducir.` };
-      }
-      if (newEnd <= existingStart && existingStart - newEnd < travelMargin) {
-        return { conflict: true, reason: `🚗 Falta tiempo al salir: Terminarías a las ${Math.floor(newEnd/60)}:${(newEnd%60).toString().padStart(2,'0')}. Solo tienes ${existingStart - newEnd} min para conducir a la cita de las ${app.time}.` };
+        return { conflict: true, reason: `⚠️ Solapamiento: Ya hay una cita de ${app.time} a ${Math.floor(existingEnd/60).toString().padStart(2,'0')}:${(existingEnd%60).toString().padStart(2,'0')}.` };
       }
     }
     return { conflict: false };
@@ -409,27 +401,6 @@ export default function AppointmentsScreen({ navigation }: any) {
       </View>
       
 
-      {/* INFORMACIÓN DETALLADA */}
-      <View style={{ marginBottom: 12 }}>
-        <Text style={styles.inputLabel}>Información detallada (Portal, Escalera, Piso, Puerta):</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ej: Portal 3, Escalera B, 2º Izquierda, Timbre Pérez"
-          value={detailedInfo}
-          onChangeText={setDetailedInfo}
-        />
-      </View>
-
-      <View style={{ marginBottom: 12 }}>
-        <Text style={styles.inputLabel}>Presupuesto acordado (€) (opcional):</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ej: 95"
-          keyboardType="numeric"
-          value={price}
-          onChangeText={setPrice}
-        />
-      </View>
 
       <Text style={styles.subtitle}>1. Servicio:</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollRow}>
