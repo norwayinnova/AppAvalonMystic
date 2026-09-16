@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TextInput, TouchableOpacity } from 'react-native';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
@@ -20,7 +20,11 @@ const getStartOfMonth = (date: Date) => {
 
 export default function DashboardScreen() {
   const [appointments, setAppointments] = useState<any[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [adminConfig, setAdminConfig] = useState({ pin: '1234', pinEnabled: true });
+  const [newPin, setNewPin] = useState('');
+  const [newTeamName, setNewTeamName] = useState('');
 
   useEffect(() => {
     const qApps = query(collection(db, 'appointments'));
@@ -32,6 +36,59 @@ export default function DashboardScreen() {
     });
     return () => unsub();
   }, []);
+
+  useEffect(() => {
+    const qTeams = query(collection(db, 'teams'));
+    const unsub = onSnapshot(qTeams, (snapshot) => {
+      const list: any[] = [];
+      snapshot.forEach(docSnap => list.push({ id: docSnap.id, ...docSnap.data() }));
+      setTeams(list);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    const { doc } = require('firebase/firestore');
+    const unsub = onSnapshot(doc(db, 'config', 'admin'), (docSnap: any) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setAdminConfig({ pinEnabled: data.pinEnabled, pin: data.pin });
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const handleUpdatePin = async () => {
+    if (newPin.length !== 4) return alert('El PIN debe tener 4 números.');
+    try {
+      const { doc, setDoc } = require('firebase/firestore');
+      await setDoc(doc(db, 'config', 'admin'), { pin: newPin, pinEnabled: true }, { merge: true });
+      alert('PIN actualizado con éxito.');
+      setNewPin('');
+    } catch (e) {
+      alert('Error al guardar el PIN.');
+    }
+  };
+
+  const handleAddTeam = async () => {
+    if (!newTeamName.trim()) return;
+    try {
+      const { addDoc } = require('firebase/firestore');
+      await addDoc(collection(db, 'teams'), { name: newTeamName.trim(), members: '' });
+      setNewTeamName('');
+    } catch (e) {
+      alert('Error al añadir empleada.');
+    }
+  };
+
+  const handleDeleteTeam = async (id: string) => {
+    try {
+      const { doc, deleteDoc } = require('firebase/firestore');
+      await deleteDoc(doc(db, 'teams', id));
+    } catch (e) {
+      alert('Error al eliminar.');
+    }
+  };
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -138,6 +195,57 @@ export default function DashboardScreen() {
       {renderStatCard('Hoy', stats.day)}
       {renderStatCard('Esta Semana', stats.week)}
       {renderStatCard('Este Mes', stats.month)}
+
+      {/* TARJETA DE ADMINISTRACIÓN */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>⚙️ Configuración y Empleadas</Text>
+        
+        {/* Cambiar PIN */}
+        <Text style={styles.subtitle}>Cambiar PIN de Administrador (Actual: {adminConfig.pin || '1234'})</Text>
+        <View style={styles.inputRow}>
+          <TextInput
+            style={styles.input}
+            placeholder="Nuevo PIN (4 dígitos)"
+            keyboardType="numeric"
+            maxLength={4}
+            value={newPin}
+            onChangeText={setNewPin}
+          />
+          <TouchableOpacity style={styles.btnAction} onPress={handleUpdatePin}>
+            <Text style={styles.btnText}>Guardar PIN</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Añadir Empleada */}
+        <Text style={[styles.subtitle, {marginTop: 15}]}>Añadir Perfil de Empleada</Text>
+        <View style={styles.inputRow}>
+          <TextInput
+            style={styles.input}
+            placeholder="Nombre (ej. María)"
+            value={newTeamName}
+            onChangeText={setNewTeamName}
+          />
+          <TouchableOpacity style={styles.btnAction} onPress={handleAddTeam}>
+            <Text style={styles.btnText}>+ Añadir</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Lista de Empleadas */}
+        {teams.length > 0 && (
+          <View style={{marginTop: 15}}>
+            <Text style={styles.subtitle}>Perfiles de Acceso Actuales:</Text>
+            {teams.map(t => (
+              <View key={t.id} style={styles.teamRow}>
+                <Text style={styles.teamName}>💇‍♀️ {t.name}</Text>
+                <TouchableOpacity onPress={() => handleDeleteTeam(t.id)} style={styles.delBtn}>
+                  <Text style={styles.delBtnText}>🗑️ Eliminar</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+
       <View style={{height: 40}} />
     </ScrollView>
   );
@@ -156,5 +264,11 @@ const styles = StyleSheet.create({
   teamRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
   teamName: { fontSize: 14, color: '#333', fontWeight: '500' },
   teamStats: { fontSize: 14, color: '#666' },
-  noDataText: { fontSize: 14, color: '#999', fontStyle: 'italic', textAlign: 'center', marginTop: 10 }
+  noDataText: { fontSize: 14, color: '#999', fontStyle: 'italic', textAlign: 'center', marginTop: 10 },
+  inputRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  input: { flex: 1, backgroundColor: '#f5f5f5', borderWidth: 1, borderColor: '#ddd', padding: 10, borderRadius: 6 },
+  btnAction: { backgroundColor: '#E91E63', paddingVertical: 12, paddingHorizontal: 15, borderRadius: 6 },
+  btnText: { color: '#fff', fontWeight: 'bold' },
+  delBtn: { padding: 8, backgroundColor: '#ffebee', borderRadius: 4 },
+  delBtnText: { color: '#d32f2f', fontSize: 12, fontWeight: 'bold' }
 });
