@@ -287,11 +287,7 @@ export default function AppointmentsScreen({ navigation }: any) {
       return;
     }
 
-    const finalAddress = validatedAddress || addressInput.trim();
-    if (!finalAddress) {
-      alert("Por favor, introduce una dirección.");
-      return;
-    }
+    const finalAddress = '';
 
     const status = checkSlotStatus(time);
     if (status.conflict) {
@@ -412,57 +408,6 @@ export default function AppointmentsScreen({ navigation }: any) {
         />
       </View>
       
-      {/* SECCIÓN DE DIRECCIÓN Y VALIDACIÓN */}
-      <View style={styles.addressSection}>
-        <Text style={styles.inputLabel}>Dirección (Calle, Número y Municipio): *</Text>
-        <View style={styles.addressInputRow}>
-          <TextInput
-            style={[
-              styles.input,
-              { flex: 1, marginBottom: 0 },
-              isValidated && styles.inputValidated
-            ]}
-            placeholder="Ej: Calle la del Manojo de Rosas, 87, Madrid"
-            value={addressInput}
-            onChangeText={searchAddress}
-          />
-          <TouchableOpacity style={styles.validateBtn} onPress={confirmCurrentAddress}>
-            <Text style={styles.validateBtnText}>✅ Validar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.mapsVerifyBtn} onPress={verifyInGoogleMaps}>
-            <Text style={styles.mapsVerifyText}>🗺️ Ver</Text>
-          </TouchableOpacity>
-        </View>
-
-        {isValidating && (
-          <View style={styles.validatingRow}>
-            <ActivityIndicator size="small" color="#002a54" />
-            <Text style={styles.validatingText}>Buscando sugerencias en mapas...</Text>
-          </View>
-        )}
-
-        {addressSuggestions.length > 0 && (
-          <View style={styles.suggestionsCard}>
-            <Text style={styles.suggestionsHeader}>📍 Sugerencias encontradas (toca para autocompletar):</Text>
-            {addressSuggestions.map((item, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={styles.suggestionItem}
-                onPress={() => selectSuggestion(item)}
-              >
-                <Text style={styles.suggestionItemTitle}>{item.title}</Text>
-                <Text style={styles.suggestionItemSubtitle}>{item.subtitle}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {isValidated && (
-          <View style={styles.validatedBadge}>
-            <Text style={styles.validatedBadgeText}>✅ Dirección Confirmada: {validatedAddress}</Text>
-          </View>
-        )}
-      </View>
 
       {/* INFORMACIÓN DETALLADA */}
       <View style={{ marginBottom: 12 }}>

@@ -8,7 +8,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import CalendarScreen from '../screens/CalendarScreen';
 import AppointmentsScreen from '../screens/AppointmentsScreen';
 import ServicesScreen from '../screens/ServicesScreen';
-import RouteScreen from '../screens/RouteScreen';
+
 import ClientsScreen from '../screens/ClientsScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import ExpensesScreen from '../screens/ExpensesScreen';
@@ -99,7 +99,7 @@ function TopTabs() {
       {showAdminOnly && <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ tabBarLabel: '📊 Dashboard' }} />}
       
       <Tab.Screen name="Calendar" component={CalendarScreen} options={{ tabBarLabel: '📅 Calendario' }} initialParams={{ role, teamName }} />
-      <Tab.Screen name="Route" component={RouteScreen} options={{ tabBarLabel: '🗺️ Rutas' }} initialParams={{ role, teamName }} />
+
       <Tab.Screen name="Appointments" component={AppointmentsScreen} options={{ tabBarLabel: '➕ Nueva Cita' }} initialParams={{ role, teamName }} />
       
       {(isAdmin || isManagement) && <Tab.Screen name="Clients" component={ClientsScreen} options={{ tabBarLabel: '👥 Clientes' }} />}
