@@ -143,20 +143,9 @@ export default function InventoryScreen({ route }: any) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>📦 Control de Inventario y Maquinaria</Text>
+      <Text style={styles.title}>📦 Control de Inventario</Text>
 
-      {/* Tabs */}
-      <View style={styles.tabsContainer}>
-        <TouchableOpacity style={[styles.tab, activeTab === 'productos' && styles.tabActive]} onPress={() => setActiveTab('productos')}>
-          <Text style={activeTab === 'productos' ? styles.tabTextActive : styles.tabText}>🧴 Productos</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.tab, activeTab === 'maquinaria' && styles.tabActive]} onPress={() => setActiveTab('maquinaria')}>
-          <Text style={activeTab === 'maquinaria' ? styles.tabTextActive : styles.tabText}>🚜 Maquinaria</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.tab, activeTab === 'otros' && styles.tabActive]} onPress={() => setActiveTab('otros')}>
-          <Text style={activeTab === 'otros' ? styles.tabTextActive : styles.tabText}>🏷️ Otros</Text>
-        </TouchableOpacity>
-      </View>
+
 
       {/* Formulario de Alta / Edición (Solo Admin) */}
       {isAdmin && (
