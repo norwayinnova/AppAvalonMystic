@@ -149,7 +149,7 @@ export default function RoleSelectionScreen() {
           )}
         </View>
 
-        <Text style={styles.footer}>NewAgainClean © 2026</Text>
+        <Text style={styles.footer}>Avalon Mystic © 2026</Text>
       </ScrollView>
     </View>
   );

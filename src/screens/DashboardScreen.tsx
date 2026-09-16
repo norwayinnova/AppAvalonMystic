@@ -343,7 +343,7 @@ export default function DashboardScreen() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <Text style={styles.mainTitle}>📊 Dashboard Ejecutivo NewAgain</Text>
+      <Text style={styles.mainTitle}>📊 Dashboard Ejecutivo Avalon Mystic</Text>
 
       {/* FILTROS GLOBALES DE PERIODO */}
       <View style={styles.filtersCard}>

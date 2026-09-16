@@ -217,7 +217,7 @@ export default function CalendarScreen({ route, navigation }: any) {
     
     let dateText = isTomorrow ? 'mañana' : (isToday ? 'hoy' : `el día ${item.date}`);
     
-    const message = `Hola ${item.client}, te recordamos que ${dateText} tienes agendada la cita con NewAgain a las ${item.time}.`;
+    const message = `Hola ${item.client}, te recordamos que ${dateText} tienes agendada la cita con Avalon Mystic a las ${item.time}.`;
     
     let phoneNum = item.phone.replace(/\s+/g, '');
     if (phoneNum.length === 9 && (phoneNum.startsWith('6') || phoneNum.startsWith('7') || phoneNum.startsWith('8') || phoneNum.startsWith('9'))) {
@@ -241,7 +241,7 @@ export default function CalendarScreen({ route, navigation }: any) {
   const requestGoogleReview = async (item: Appointment) => {
     if (!item.phone) return alert('El cliente no tiene teléfono guardado.');
     
-    const message = `¡Hola ${item.client}! 👋\nEsperamos que hayas quedado encantado con la limpieza de tu ${item.serviceName.toLowerCase()}. ✨\n\nPara nosotros tu opinión es fundamental. Si te ha gustado el resultado, ¿nos regalarías 1 minuto para dejarnos 5 estrellitas en Google? Nos ayuda muchísimo a seguir creciendo. 🙏\n\n⭐ Puedes hacerlo aquí: https://g.page/r/Cby71i4U3YJmEBM/review\n\n¡Mil gracias por confiar en NewAgainClean!`;
+    const message = `¡Hola ${item.client}! 👋\nEsperamos que hayas quedado encantado con la limpieza de tu ${item.serviceName.toLowerCase()}. ✨\n\nPara nosotros tu opinión es fundamental. Si te ha gustado el resultado, ¿nos regalarías 1 minuto para dejarnos 5 estrellitas en Google? Nos ayuda muchísimo a seguir creciendo. 🙏\n\n⭐ Puedes hacerlo aquí: https://g.page/r/Cby71i4U3YJmEBM/review\n\n¡Mil gracias por confiar en Avalon Mystic!`;
     
     let phoneNum = item.phone.replace(/\s+/g, '');
     if (phoneNum.length === 9 && (phoneNum.startsWith('6') || phoneNum.startsWith('7') || phoneNum.startsWith('8') || phoneNum.startsWith('9'))) {
@@ -691,7 +691,7 @@ export default function CalendarScreen({ route, navigation }: any) {
               <p>CIF: B-12345678</p>
               <p>Polígono Industrial, Nave 4</p>
               <p>28000 Madrid, España</p>
-              <p>info@newagain.es | +34 600 000 000</p>
+              <p>info@avalonmystic.es | +34 600 000 000</p>
             </div>
             <div class="details-col" style="text-align: right;">
               <h3>Datos del Cliente</h3>
@@ -746,7 +746,7 @@ export default function CalendarScreen({ route, navigation }: any) {
           </div>
       
           <div class="footer">
-            Documento generado automáticamente por NewAgain System. Gracias por confiar en nosotros.
+            Documento generado automáticamente por Avalon Mystic System. Gracias por confiar en nosotros.
           </div>
         </div>
       </body>
