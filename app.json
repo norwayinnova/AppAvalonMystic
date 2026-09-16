@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "NewAgain",
-    "slug": "newagain-app",
+    "name": "Avalon Mystic",
+    "slug": "avalon-mystic-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "android": {
-      "package": "com.innovanor.newagain"
+      "package": "com.innovanor.avalonmystic"
     }
   }
 }

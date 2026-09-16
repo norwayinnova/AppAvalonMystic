@@ -118,7 +118,7 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
-          headerStyle: { backgroundColor: '#0d1b2a' },
+          headerStyle: { backgroundColor: '#FFFFFF' },
           headerTitleAlign: 'center',
           headerTitle: () => (
             <View style={{flexDirection: 'row', alignItems: 'center'}}>
@@ -126,8 +126,8 @@ export default function AppNavigator() {
             </View>
           ),
           headerRight: () => role ? (
-            <TouchableOpacity onPress={logout} style={{marginRight: 15, padding: 6, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)'}}>
-              <Text style={{color: 'rgba(255,255,255,0.7)', fontWeight: 'bold', fontSize: 13}}>Salir 🔒</Text>
+            <TouchableOpacity onPress={logout} style={{marginRight: 15, padding: 6, backgroundColor: 'rgba(233,30,99,0.1)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(233,30,99,0.3)'}}>
+              <Text style={{color: '#E91E63', fontWeight: 'bold', fontSize: 13}}>Salir 🔒</Text>
             </TouchableOpacity>
           ) : null
         }}
@@ -146,12 +146,12 @@ const styles = StyleSheet.create({
   logoContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 5 },
   logoImage: { width: 140, height: 40 },
   tabBarWrapper: {
-    backgroundColor: '#0d1b2a',
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
+    borderBottomColor: 'rgba(0,0,0,0.08)',
     elevation: 5,
     shadowColor: '#000',
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 3 }
   },
   tabScrollContent: {
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent'
   },
   tabButtonActive: {
-    borderBottomColor: '#4a9b40',
+    borderBottomColor: '#E91E63', // Pink accent
   },
   tabButtonInactive: {
     borderBottomColor: 'transparent',
@@ -180,11 +180,11 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   },
   tabTextActive: {
-    color: '#4a9b40',
+    color: '#E91E63',
     fontWeight: 'bold',
   },
   tabTextInactive: {
-    color: 'rgba(255,255,255,0.45)',
+    color: '#888888',
     fontWeight: '600',
   }
 });
