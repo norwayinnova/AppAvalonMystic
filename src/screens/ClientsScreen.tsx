@@ -9,7 +9,7 @@ import {
   Linking,
   ActivityIndicator
 } from 'react-native';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 interface Client {
@@ -78,6 +78,16 @@ export default function ClientsScreen({ navigation }: any) {
     setExpandedClientId(prev => prev === clientId ? null : clientId);
   };
 
+  const deleteClient = async (id: string, name: string) => {
+    if (window.confirm(`¿Estás seguro de que deseas eliminar al cliente "${name}"? Esto no eliminará sus citas pasadas.`)) {
+      try {
+        await deleteDoc(doc(db, 'clients', id));
+      } catch (error) {
+        alert('Hubo un error al eliminar el cliente.');
+      }
+    }
+  };
+
   // Filtrar clientes por nombre o teléfono
   const filteredClients = clients.filter(c => {
     const term = searchTerm.toLowerCase();
@@ -121,13 +131,18 @@ export default function ClientsScreen({ navigation }: any) {
             return (
               <View style={styles.clientCard}>
                 <View style={styles.cardHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.clientName}>👤 {item.name}</Text>
-                    {item.phone ? (
-                      <TouchableOpacity style={styles.phoneRow} onPress={() => callClient(item.phone)}>
-                        <Text style={styles.phoneText}>📞 {item.phone}</Text>
-                      </TouchableOpacity>
-                    ) : null}
+                  <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <View>
+                      <Text style={styles.clientName}>👤 {item.name}</Text>
+                      {item.phone ? (
+                        <TouchableOpacity style={styles.phoneRow} onPress={() => callClient(item.phone)}>
+                          <Text style={styles.phoneText}>📞 {item.phone}</Text>
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
+                    <TouchableOpacity onPress={() => deleteClient(item.id, item.name)} style={styles.deleteBtn}>
+                      <Text style={styles.deleteBtnText}>🗑️</Text>
+                    </TouchableOpacity>
                   </View>
 
                   <View style={styles.badgeColumn}>
@@ -259,5 +274,7 @@ const styles = StyleSheet.create({
   historyService: { color: '#7A4B56', fontSize: 12, fontWeight: 'bold' },
   historyAddress: { color: '#777', fontSize: 11, marginTop: 2 },
   noHistory: { color: '#888', fontStyle: 'italic', fontSize: 12 },
-  empty: { textAlign: 'center', color: '#888', marginTop: 30, fontStyle: 'italic', fontSize: 15 }
+  empty: { textAlign: 'center', color: '#888', marginTop: 30, fontStyle: 'italic', fontSize: 15 },
+  deleteBtn: { padding: 8, backgroundColor: '#ffe5e5', borderRadius: 6, alignSelf: 'flex-start', marginLeft: 10 },
+  deleteBtnText: { fontSize: 16 }
 });

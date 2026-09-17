@@ -205,73 +205,7 @@ export default function AppointmentsScreen({ navigation }: any) {
     return { conflict: false };
   };
 
-  const findOptimalSlot = async () => {
-    const targetAddr = validatedAddress || addressInput;
-    if (!targetAddr || targetAddr.length < 4 || !selectedService) {
-      Alert.alert("Aviso", "Primero escribe la dirección y selecciona un servicio.");
-      return;
-    }
 
-    try {
-      const baseDateObj = new Date(date);
-      const start = new Date(baseDateObj); start.setDate(start.getDate() - 4);
-      const end = new Date(baseDateObj); end.setDate(end.getDate() + 4);
-      
-      const startStr = start.toISOString().split('T')[0];
-      const endStr = end.toISOString().split('T')[0];
-
-      const q = query(collection(db, 'appointments'), where('date', '>=', startStr), where('date', '<=', endStr));
-      const snapshot = await getDocs(q);
-      const appsInRange: any[] = [];
-      snapshot.forEach(docSnap => appsInRange.push({ id: docSnap.id, ...docSnap.data() }));
-
-      const getSimilarity = (addr1: string, addr2: string) => {
-        if(!addr1 || !addr2) return 0;
-        const words1 = addr1.toLowerCase().split(' ');
-        const words2 = addr2.toLowerCase().split(' ');
-        let matches = 0;
-        for(let w1 of words1) {
-          if(w1.length > 3 && words2.includes(w1)) matches++;
-        }
-        return matches;
-      };
-
-      let bestMatchApp = null;
-      let maxSim = 0;
-
-      for (const app of appsInRange) {
-        const sim = getSimilarity(targetAddr, app.address);
-        if (sim > maxSim) {
-          maxSim = sim;
-          bestMatchApp = app;
-        }
-      }
-
-      if (bestMatchApp && maxSim > 0) {
-        const getMinutes = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-        const toTimeStr = (mins: number) => `${Math.floor(mins/60).toString().padStart(2,'0')}:${(mins%60).toString().padStart(2,'0')}`;
-        
-        const existingStart = getMinutes(bestMatchApp.time);
-        const existingEnd = existingStart + parseInt(bestMatchApp.duration);
-        const suggestedStartAfter = existingEnd + 30; 
-        const roundedAfter = Math.ceil(suggestedStartAfter / 15) * 15; 
-        const suggestedTime = toTimeStr(roundedAfter);
-        const suggestedTeam = bestMatchApp.team || teams[0]?.name || 'Equipo 1';
-        
-        setSmartSuggestion({
-          date: bestMatchApp.date,
-          time: suggestedTime,
-          team: suggestedTeam,
-          reason: `💡 Inteligencia de Rutas: El ${suggestedTeam} estará en esa zona el día ${bestMatchApp.date}. Para optimizar su ruta, te sugerimos asignarles esta cita a las ${suggestedTime}.`
-        });
-      } else {
-        Alert.alert("Búsqueda finalizada", "No hay equipos en esa zona en los días próximos.");
-        setSmartSuggestion(null);
-      }
-    } catch (e) {
-      Alert.alert("Error", "No se pudo calcular la ruta óptima.");
-    }
-  };
 
   const saveAppointment = async () => {
     if (!client.trim() || !date || !time || !selectedService) {
@@ -417,26 +351,7 @@ export default function AppointmentsScreen({ navigation }: any) {
         ))}
       </ScrollView>
 
-      <TouchableOpacity style={styles.smartButton} onPress={findOptimalSlot}>
-        <Text style={styles.smartButtonText}>✨ Sugerir Equipo y Fecha Óptimos</Text>
-      </TouchableOpacity>
 
-      {smartSuggestion && (
-        <View style={styles.suggestionBox}>
-          <Text style={styles.suggestionText}>{smartSuggestion.reason}</Text>
-          <TouchableOpacity 
-            style={styles.applyBtn} 
-            onPress={() => {
-              setDate(smartSuggestion.date);
-              setTime(smartSuggestion.time);
-              setTeam(smartSuggestion.team);
-              setSmartSuggestion(null);
-            }}
-          >
-            <Text style={styles.applyBtnText}>✅ Aplicar y Asignar Equipo</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       <Text style={styles.subtitle}>2. Equipo Asignado:</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollRow}>
