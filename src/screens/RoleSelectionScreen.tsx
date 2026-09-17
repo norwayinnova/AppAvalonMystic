@@ -47,9 +47,7 @@ export default function RoleSelectionScreen() {
         setPin('');
       }
     } else if (loginTarget.type === 'management') {
-      // Management uses admin PIN or maybe no PIN? The plan said lock all internal profiles.
-      // Let's just use admin pin for management for now, or '1234'.
-      if (pin === (adminConfig.pin || '1234')) {
+      if (pin === (adminConfig.managementPin || '1234')) {
         loginAsManagement();
       } else {
         setErrorMsg('PIN incorrecto.');

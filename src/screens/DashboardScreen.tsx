@@ -30,8 +30,9 @@ export default function DashboardScreen() {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [adminConfig, setAdminConfig] = useState({ pin: '1234', pinEnabled: true });
+  const [adminConfig, setAdminConfig] = useState({ pin: '1234', managementPin: '1234', pinEnabled: true });
   const [newPin, setNewPin] = useState('');
+  const [newManagementPin, setNewManagementPin] = useState('');
   const [newTeamName, setNewTeamName] = useState('');
 
   useEffect(() => {
@@ -66,7 +67,7 @@ export default function DashboardScreen() {
     const unsub = onSnapshot(doc(db, 'config', 'admin'), (docSnap: any) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        setAdminConfig({ pinEnabled: data.pinEnabled, pin: data.pin });
+        setAdminConfig({ pinEnabled: data.pinEnabled, pin: data.pin, managementPin: data.managementPin });
       }
     });
     return () => unsub();
@@ -84,25 +85,18 @@ export default function DashboardScreen() {
     }
   };
 
-  const handleAddTeam = async () => {
-    if (!newTeamName.trim()) return;
+  const handleUpdateManagementPin = async () => {
+    if (newManagementPin.length !== 4) return alert('El PIN debe tener 4 números.');
     try {
-      const { addDoc } = require('firebase/firestore');
-      await addDoc(collection(db, 'teams'), { name: newTeamName.trim(), members: '', pin: '1234' });
-      setNewTeamName('');
+      const { doc, setDoc } = require('firebase/firestore');
+      await setDoc(doc(db, 'config', 'admin'), { managementPin: newManagementPin }, { merge: true });
+      alert('PIN de AvalonMystic actualizado con éxito.');
+      setNewManagementPin('');
     } catch (e) {
-      alert('Error al añadir empleada.');
+      alert('Error al guardar el PIN.');
     }
   };
 
-  const handleDeleteTeam = async (id: string) => {
-    try {
-      const { doc, deleteDoc } = require('firebase/firestore');
-      await deleteDoc(doc(db, 'teams', id));
-    } catch (e) {
-      alert('Error al eliminar.');
-    }
-  };
 
   const handleMarkAsPaid = async (id: string, method: 'cash' | 'bizum' | 'otro') => {
     try {
@@ -444,10 +438,10 @@ export default function DashboardScreen() {
 
       {/* TARJETA DE ADMINISTRACIÓN */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>⚙️ Configuración y Empleadas</Text>
+        <Text style={styles.cardTitle}>⚙️ Configuración de Accesos</Text>
         
-        {/* Cambiar PIN */}
-        <Text style={styles.subtitle}>Cambiar PIN de Administrador (Actual: {adminConfig.pin || '1234'})</Text>
+        {/* Cambiar PIN Admin */}
+        <Text style={styles.subtitle}>PIN de Administrador (Actual: {adminConfig.pin || '1234'})</Text>
         <View style={styles.inputRow}>
           <TextInput
             style={styles.input}
@@ -462,60 +456,21 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Añadir Empleada */}
-        <Text style={[styles.subtitle, {marginTop: 15}]}>Añadir Perfil de Empleada</Text>
+        {/* Cambiar PIN AvalonMystic */}
+        <Text style={[styles.subtitle, {marginTop: 15}]}>PIN de AvalonMystic (Actual: {adminConfig.managementPin || '1234'})</Text>
         <View style={styles.inputRow}>
           <TextInput
             style={styles.input}
-            placeholder="Nombre (ej. María)"
-            value={newTeamName}
-            onChangeText={setNewTeamName}
+            placeholder="Nuevo PIN (4 dígitos)"
+            keyboardType="numeric"
+            maxLength={4}
+            value={newManagementPin}
+            onChangeText={setNewManagementPin}
           />
-          <TouchableOpacity style={styles.btnAction} onPress={handleAddTeam}>
-            <Text style={styles.btnText}>+ Añadir</Text>
+          <TouchableOpacity style={styles.btnAction} onPress={handleUpdateManagementPin}>
+            <Text style={styles.btnText}>Guardar PIN</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Lista de Empleadas */}
-        {teams.length > 0 && (
-          <View style={{marginTop: 15}}>
-            <Text style={styles.subtitle}>Perfiles de Acceso Actuales:</Text>
-            {teams.map(t => (
-              <View key={t.id} style={[styles.teamRow, {flexDirection: 'column', alignItems: 'stretch'}]}>
-                <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10}}>
-                  <Text style={styles.teamName}>💇‍♀️ {t.name} (PIN: {t.pin || '1234'})</Text>
-                  <TouchableOpacity onPress={() => handleDeleteTeam(t.id)} style={styles.delBtn}>
-                    <Text style={styles.delBtnText}>🗑️ Eliminar</Text>
-                  </TouchableOpacity>
-                </View>
-                <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                  <TextInput
-                    style={[styles.input, {flex: 1, marginRight: 10, paddingVertical: 8, marginBottom: 0}]}
-                    placeholder="Nuevo PIN (4 dígitos)"
-                    keyboardType="numeric"
-                    maxLength={4}
-                    onChangeText={(text) => t.newPin = text}
-                  />
-                  <TouchableOpacity 
-                    style={[styles.btnAction, {paddingVertical: 12, paddingHorizontal: 15}]} 
-                    onPress={async () => {
-                      if (!t.newPin || t.newPin.length !== 4) return alert('El PIN debe tener 4 dígitos.');
-                      try {
-                        const { doc, updateDoc } = require('firebase/firestore');
-                        await updateDoc(doc(db, 'teams', t.id), { pin: t.newPin });
-                        alert(`PIN de ${t.name} actualizado.`);
-                      } catch(e) {
-                        alert('Error al actualizar PIN.');
-                      }
-                    }}
-                  >
-                    <Text style={[styles.btnText, {fontSize: 14}]}>Cambiar PIN</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
       </View>
 
       <View style={{height: 40}} />
