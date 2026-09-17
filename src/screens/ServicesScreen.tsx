@@ -8,13 +8,16 @@ interface Service {
   name: string;
   duration: string;
   price?: string;
+  allowedTeams?: string[];
 }
 
 export default function ServicesScreen() {
   const [services, setServices] = useState<Service[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
   const [name, setName] = useState('');
   const [duration, setDuration] = useState('');
   const [price, setPrice] = useState('');
+  const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -31,7 +34,15 @@ export default function ServicesScreen() {
       console.error(error);
       setLoading(false);
     });
-    return () => unsubscribe();
+
+    const qTeams = query(collection(db, 'teams'));
+    const unTeams = onSnapshot(qTeams, snap => {
+      const tList: any[] = [];
+      snap.forEach(d => tList.push({ id: d.id, ...d.data() }));
+      setTeams(tList);
+    });
+
+    return () => { unsubscribe(); unTeams(); };
   }, []);
 
   const saveService = async () => {
@@ -39,12 +50,17 @@ export default function ServicesScreen() {
       alert('Por favor, completa el nombre y la duración en minutos.');
       return;
     }
+    if (selectedTeams.length === 0) {
+      alert('Selecciona al menos una empleada que realice este servicio.');
+      return;
+    }
 
     try {
       const serviceData: any = {
         name: name.trim(),
         duration: duration.trim(),
-        price: price.trim() || ''
+        price: price.trim() || '',
+        allowedTeams: selectedTeams
       };
 
       if (editingId) {
@@ -62,6 +78,7 @@ export default function ServicesScreen() {
       setName('');
       setDuration('');
       setPrice('');
+      setSelectedTeams([]);
     } catch (error) {
       alert('Hubo un error al guardar el servicio.');
     }
@@ -72,6 +89,7 @@ export default function ServicesScreen() {
     setName(item.name);
     setDuration(item.duration);
     setPrice(item.price || '');
+    setSelectedTeams(item.allowedTeams || []);
   };
 
   const cancelEdit = () => {
@@ -79,6 +97,7 @@ export default function ServicesScreen() {
     setName('');
     setDuration('');
     setPrice('');
+    setSelectedTeams([]);
   };
 
   const deleteService = async (id: string, serviceName: string) => {
@@ -120,6 +139,32 @@ export default function ServicesScreen() {
         value={price}
         onChangeText={setPrice}
       />
+
+      <View style={{ marginBottom: 15 }}>
+        <Text style={{ fontWeight: 'bold', color: '#7A4B56', marginBottom: 5 }}>¿Qué empleadas realizan este servicio?</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+          {teams.map(t => {
+            const isSelected = selectedTeams.includes(t.name);
+            return (
+              <TouchableOpacity 
+                key={t.id} 
+                style={[styles.chip, isSelected && styles.chipSelected]}
+                onPress={() => {
+                  if (isSelected) {
+                    setSelectedTeams(selectedTeams.filter(name => name !== t.name));
+                  } else {
+                    setSelectedTeams([...selectedTeams, t.name]);
+                  }
+                }}
+              >
+                <Text style={isSelected ? styles.chipTextSelected : styles.chipTextUnselected}>
+                  {isSelected ? '☑️' : '☐'} {t.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
       
       <View style={styles.actionRow}>
         {editingId && (
@@ -190,7 +235,11 @@ const styles = StyleSheet.create({
   serviceDuration: { color: '#D48A9A', fontWeight: 'bold', fontSize: 14 },
   servicePrice: { color: '#7A4B56', fontWeight: 'bold', fontSize: 14, backgroundColor: '#F9F1F3', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
   cardActions: { flexDirection: 'row', gap: 8 },
-  iconBtn: { padding: 8, borderRadius: 6, backgroundColor: '#FDF9fa' },
+  iconBtn: { padding: 10, backgroundColor: '#FFF5F7', borderRadius: 8 },
   actionIcon: { fontSize: 16 },
-  empty: { color: '#888', fontStyle: 'italic', textAlign: 'center', marginTop: 20 }
+  empty: { textAlign: 'center', marginTop: 30, color: '#aaa', fontStyle: 'italic' },
+  chip: { paddingVertical: 8, paddingHorizontal: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 20 },
+  chipSelected: { backgroundColor: '#FFF5F7', borderColor: '#D48A9A' },
+  chipTextUnselected: { color: '#555' },
+  chipTextSelected: { color: '#D48A9A', fontWeight: 'bold' }
 });

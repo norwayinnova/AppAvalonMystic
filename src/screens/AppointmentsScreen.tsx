@@ -365,7 +365,10 @@ export default function AppointmentsScreen({ route, navigation }: any) {
     }
   }
 
-  const activeTeamsList = teams.length > 0 ? teams.map(t => t.name) : ['Equipo 1', 'Equipo 2'];
+  let activeTeamsList = teams.length > 0 ? teams.map(t => t.name) : ['Equipo 1', 'Equipo 2'];
+  if (selectedService?.allowedTeams && selectedService.allowedTeams.length > 0) {
+    activeTeamsList = activeTeamsList.filter(t => selectedService.allowedTeams.includes(t));
+  }
 
   return (
     <ScrollView style={styles.container}>

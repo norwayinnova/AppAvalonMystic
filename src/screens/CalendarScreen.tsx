@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -84,6 +84,7 @@ export default function CalendarScreen({ route, navigation }: any) {
   // Control para desplegar u ocultar detalles de cada columna
   const [expandedTeams, setExpandedTeams] = useState<Record<string, boolean>>({});
   const [showCalendar, setShowCalendar] = useState(false);
+  const headerScrollRef = useRef<ScrollView>(null);
 
   // Vista Mensual
   const [calendarView, setCalendarView] = useState<'day' | 'month'>('day');
@@ -97,6 +98,9 @@ export default function CalendarScreen({ route, navigation }: any) {
     const [h, m] = timeStr.split(':').map(Number);
     return h * 60 + m;
   };
+
+  const [services, setServices] = useState<any[]>([]);
+  const [teamServices, setTeamServices] = useState<string[]>([]);
 
   // 1. Cargar Equipos desde Firestore
   useEffect(() => {
@@ -131,7 +135,14 @@ export default function CalendarScreen({ route, navigation }: any) {
       }
     });
 
-    return () => unsubscribeTeams();
+    const qServices = query(collection(db, 'services'));
+    const unsubscribeServices = onSnapshot(qServices, snap => {
+      const srvs: any[] = [];
+      snap.forEach(d => srvs.push({ id: d.id, ...d.data() }));
+      setServices(srvs);
+    });
+
+    return () => { unsubscribeTeams(); unsubscribeServices(); };
   }, []);
 
   // 2. Cargar Citas y calcular conflictos por equipo
@@ -349,6 +360,8 @@ export default function CalendarScreen({ route, navigation }: any) {
         tools: teamTools.trim()
       };
 
+      const oldTeamName = editingTeamId ? teams.find(t => t.id === editingTeamId)?.name : null;
+
       if (editingTeamId) {
         await updateDoc(doc(db, 'teams', editingTeamId), {
           ...teamData,
@@ -362,10 +375,32 @@ export default function CalendarScreen({ route, navigation }: any) {
         });
       }
 
+      const updatePromises = services.map(async (srv) => {
+         let allowed = [...(srv.allowedTeams || [])];
+         const shouldHave = teamServices.includes(srv.id);
+         
+         if (oldTeamName) {
+            allowed = allowed.filter(t => t !== oldTeamName);
+         }
+         
+         if (shouldHave) {
+            if (!allowed.includes(teamData.name)) allowed.push(teamData.name);
+         } else {
+            allowed = allowed.filter(t => t !== teamData.name);
+         }
+
+         const changed = JSON.stringify(allowed.sort()) !== JSON.stringify([...(srv.allowedTeams || [])].sort());
+         if (changed) {
+            await updateDoc(doc(db, 'services', srv.id), { allowedTeams: allowed });
+         }
+      });
+      await Promise.all(updatePromises);
+
       setTeamName('');
       setTeamMembers('');
       setTeamVehicle('');
       setTeamTools('');
+      setTeamServices([]);
     } catch (e) {
       alert('Error al guardar el equipo.');
     }
@@ -377,6 +412,9 @@ export default function CalendarScreen({ route, navigation }: any) {
     setTeamMembers(t.members || '');
     setTeamVehicle(t.vehicle || '');
     setTeamTools(t.tools || '');
+    
+    const assignedServices = services.filter(srv => srv.allowedTeams?.includes(t.name)).map(srv => srv.id);
+    setTeamServices(assignedServices);
   };
 
   const cancelEditTeam = () => {
@@ -385,6 +423,7 @@ export default function CalendarScreen({ route, navigation }: any) {
     setTeamMembers('');
     setTeamVehicle('');
     setTeamTools('');
+    setTeamServices([]);
   };
 
   const removeTeam = async (id: string, name: string) => {
@@ -696,39 +735,60 @@ export default function CalendarScreen({ route, navigation }: any) {
         };
 
         return (
-          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-              <View style={{ flexDirection: 'column' }}>
-                {/* Cabeceras de equipo */}
-                <View style={{ flexDirection: 'row', marginLeft: LABEL_WIDTH, borderBottomWidth: 2, borderBottomColor: '#e0e8f0' }}>
-                  {visibleTeams.map(t => {
-                    const teamApps = appointments.filter(a => (a.team || teams[0]?.name) === t.name);
+          <View style={{ flex: 1 }}>
+            {/* FIXED TOP ROW (Sticky vertically, syncs horizontally) */}
+            <View style={{ flexDirection: 'row', backgroundColor: '#fff', zIndex: 10, elevation: 4 }}>
+              {/* Top Left Corner */}
+              <View style={{ width: LABEL_WIDTH, borderRightWidth: 1, borderRightColor: '#e0e8f0', borderBottomWidth: 2, borderBottomColor: '#e0e8f0' }} />
+              
+              {/* Horizontally Scrollable Team Headers */}
+              <ScrollView 
+                horizontal 
+                ref={headerScrollRef} 
+                scrollEnabled={false} 
+                showsHorizontalScrollIndicator={false}
+                style={{ flex: 1, borderBottomWidth: 2, borderBottomColor: '#e0e8f0' }}
+              >
+                {visibleTeams.map(t => {
+                  const teamApps = appointments.filter(a => (a.team || teams[0]?.name) === t.name);
+                  return (
+                    <View key={t.id} style={{ width: COL_WIDTH, paddingHorizontal: 8, paddingVertical: 10, borderRightWidth: 1, borderRightColor: '#e0e8f0', backgroundColor: '#f8fafc' }}>
+                      <Text style={{ fontWeight: 'bold', color: '#7A4B56', fontSize: 13 }}>🚐 {t.name}</Text>
+                      {t.members ? <Text style={{ fontSize: 11, color: '#888', marginTop: 2 }}>👥 {t.members}</Text> : null}
+                      <Text style={{ fontSize: 11, color: '#D48A9A', marginTop: 2, fontWeight: 'bold' }}>{teamApps.length} cita{teamApps.length !== 1 ? 's' : ''}</Text>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
+            {/* VERTICALLY SCROLLABLE BODY */}
+            <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={true}>
+              <View style={{ flexDirection: 'row' }}>
+                
+                {/* Left Column (Times) */}
+                <View style={{ width: LABEL_WIDTH, backgroundColor: '#fff', borderRightWidth: 1, borderRightColor: '#e0e8f0' }}>
+                  {Array.from({ length: GRID_HEIGHT / (60 * PX_PER_MIN) + 1 }, (_, i) => {
+                    const h = START_HOUR + i;
+                    if (h > END_HOUR) return null;
                     return (
-                      <View key={t.id} style={{ width: COL_WIDTH, paddingHorizontal: 8, paddingVertical: 10, borderRightWidth: 1, borderRightColor: '#e0e8f0', backgroundColor: '#f8fafc' }}>
-                        <Text style={{ fontWeight: 'bold', color: '#7A4B56', fontSize: 13 }}>🚐 {t.name}</Text>
-                        {t.members ? <Text style={{ fontSize: 11, color: '#888', marginTop: 2 }}>👥 {t.members}</Text> : null}
-                        <Text style={{ fontSize: 11, color: '#D48A9A', marginTop: 2, fontWeight: 'bold' }}>{teamApps.length} cita{teamApps.length !== 1 ? 's' : ''}</Text>
+                      <View key={h} style={{ height: 60 * PX_PER_MIN, justifyContent: 'flex-start', paddingTop: 4, paddingRight: 6 }}>
+                        <Text style={{ fontSize: 11, color: '#aaa', textAlign: 'right' }}>{String(Math.floor(h)).padStart(2,'0')}:00</Text>
                       </View>
                     );
                   })}
                 </View>
 
-                {/* Cuerpo del grid */}
-                <View style={{ flexDirection: 'row' }}>
-                  {/* Etiquetas de horas */}
-                  <View style={{ width: LABEL_WIDTH }}>
-                    {Array.from({ length: GRID_HEIGHT / (60 * PX_PER_MIN) + 1 }, (_, i) => {
-                      const h = START_HOUR + i;
-                      if (h > END_HOUR) return null;
-                      return (
-                        <View key={h} style={{ height: 60 * PX_PER_MIN, justifyContent: 'flex-start', paddingTop: 4, paddingRight: 6 }}>
-                          <Text style={{ fontSize: 11, color: '#aaa', textAlign: 'right' }}>{String(Math.floor(h)).padStart(2,'0')}:00</Text>
-                        </View>
-                      );
-                    })}
-                  </View>
-
-                  {/* Columnas por equipo */}
+                {/* Grid (Horizontally Scrollable) */}
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={true} 
+                  style={{ flex: 1 }}
+                  scrollEventThrottle={16}
+                  onScroll={(e) => {
+                    headerScrollRef.current?.scrollTo({ x: e.nativeEvent.contentOffset.x, animated: false });
+                  }}
+                >
                   {visibleTeams.map(t => {
                     const teamApps = appointments.filter(a => (a.team || teams[0]?.name) === t.name);
                     return (
@@ -788,10 +848,10 @@ export default function CalendarScreen({ route, navigation }: any) {
                       </View>
                     );
                   })}
-                </View>
+                </ScrollView>
               </View>
             </ScrollView>
-          </ScrollView>
+          </View>
         );
       })()}
 
@@ -976,6 +1036,32 @@ export default function CalendarScreen({ route, navigation }: any) {
                 value={teamTools}
                 onChangeText={setTeamTools}
               />
+
+              <View style={{ marginBottom: 15 }}>
+                <Text style={{ fontWeight: 'bold', color: '#7A4B56', marginBottom: 5 }}>¿Qué servicios realiza esta empleada/equipo?</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                  {services.map(s => {
+                    const isSelected = teamServices.includes(s.id);
+                    return (
+                      <TouchableOpacity 
+                        key={s.id} 
+                        style={[{ paddingVertical: 8, paddingHorizontal: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 20 }, isSelected && { backgroundColor: '#FFF5F7', borderColor: '#D48A9A' }]}
+                        onPress={() => {
+                          if (isSelected) {
+                            setTeamServices(teamServices.filter(id => id !== s.id));
+                          } else {
+                            setTeamServices([...teamServices, s.id]);
+                          }
+                        }}
+                      >
+                        <Text style={isSelected ? { color: '#D48A9A', fontWeight: 'bold' } : { color: '#555' }}>
+                          {isSelected ? '☑️' : '☐'} {s.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
 
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 5 }}>
                 {editingTeamId && (

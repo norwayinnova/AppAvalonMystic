@@ -76,7 +76,9 @@ export default function ClientBookingScreen({ navigation }: any) {
       const getMins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
       const duration = parseInt(selectedService.duration || '60');
 
-      let teamsToCheck = selectedTeam.id === 'any' ? teams : [selectedTeam];
+      let teamsToCheck = selectedTeam.id === 'any' 
+        ? teams.filter(t => !selectedService?.allowedTeams || selectedService.allowedTeams.includes(t.name)) 
+        : [selectedTeam];
       const validSlots = new Set<string>();
 
       teamsToCheck.forEach(teamObj => {
@@ -161,7 +163,9 @@ export default function ClientBookingScreen({ navigation }: any) {
         const duration = parseInt(selectedService.duration || '60');
         const slotEnd = slotStart + duration;
 
-        const availableTeam = teams.find(teamObj => {
+        const availableTeam = teams
+          .filter(t => !selectedService?.allowedTeams || selectedService.allowedTeams.includes(t.name))
+          .find(teamObj => {
           const teamApps = allApps.filter(app => (app.team || teams[0]?.name) === teamObj.name && app.status !== 'cancelled');
           const hasConflict = teamApps.some(app => {
             const appStart = getMins(app.time);
@@ -277,7 +281,9 @@ export default function ClientBookingScreen({ navigation }: any) {
             <TouchableOpacity style={[styles.optionCard, selectedTeam?.id === 'any' && styles.optionSelected]} onPress={() => setSelectedTeam({id: 'any', name: 'Cualquiera'})}>
               <Text style={[styles.optionTitle, selectedTeam?.id === 'any' && styles.textSelected]}>💇‍♀️ Sin preferencia (Cualquiera)</Text>
             </TouchableOpacity>
-            {teams.map(t => (
+            {teams
+              .filter(t => !selectedService?.allowedTeams || selectedService.allowedTeams.includes(t.name))
+              .map(t => (
               <TouchableOpacity key={t.id} style={[styles.optionCard, selectedTeam?.id === t.id && styles.optionSelected]} onPress={() => setSelectedTeam(t)}>
                 <Text style={[styles.optionTitle, selectedTeam?.id === t.id && styles.textSelected]}>💇‍♀️ {t.name}</Text>
               </TouchableOpacity>
