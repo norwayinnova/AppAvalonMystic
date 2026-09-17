@@ -7,6 +7,15 @@
     "userInterfaceStyle": "light",
     "android": {
       "package": "com.innovanor.avalonmystic"
+    },
+    "web": {
+      "favicon": "./assets/logo.jpg",
+      "name": "Avalon Mystic",
+      "shortName": "Avalon",
+      "themeColor": "#D48A9A",
+      "backgroundColor": "#ffffff",
+      "display": "standalone",
+      "orientation": "portrait"
     }
   }
 }

@@ -82,28 +82,51 @@ export default function AppointmentsScreen({ route, navigation }: any) {
     return () => unsubscribe();
   }, [date]);
 
+  const [isTenthAppointment, setIsTenthAppointment] = useState(false);
+
   // BUSCADOR AUTOMÁTICO DE CLIENTES POR TELÉFONO
   const handlePhoneChange = async (text: string) => {
     setPhone(text);
+    setIsTenthAppointment(false); // Reset
     const cleanPhone = text.trim();
     if (cleanPhone.length >= 6) {
       try {
         const qClient = query(collection(db, 'clients'), where('phone', '==', cleanPhone));
         const snap = await getDocs(qClient);
+        
+        let clientFound: any = null;
         if (!snap.empty) {
-          const clientFound: any = { id: snap.docs[0].id, ...snap.docs[0].data() };
-          
-          // Buscar historial de citas canceladas para ver si es problemático
-          const qApps = query(collection(db, 'appointments'), where('phone', '==', cleanPhone), where('status', '==', 'cancelled'));
-          const snapApps = await getDocs(qApps);
-          if (snapApps.docs.length >= 2) {
-            clientFound.isProblematic = true;
-          }
-
-          setExistingClientData(clientFound);
+          clientFound = { id: snap.docs[0].id, ...snap.docs[0].data() };
         } else {
-          setExistingClientData(null);
+          clientFound = { phone: cleanPhone };
         }
+
+        // Buscar historial de citas en appointments (incluso si no está guardado en clients)
+        const qApps = query(collection(db, 'appointments'), where('phone', '==', cleanPhone));
+        const snapApps = await getDocs(qApps);
+        
+        let cancelledCount = 0;
+        let completedCount = 0;
+        snapApps.forEach(doc => {
+           if (doc.data().status === 'cancelled') cancelledCount++;
+           if (doc.data().status === 'completed') completedCount++;
+        });
+
+        if (cancelledCount >= 2) {
+          clientFound.isProblematic = true;
+        }
+        
+        if (completedCount === 9) {
+          clientFound.isTenth = true;
+          setIsTenthAppointment(true);
+        }
+
+        if (!snap.empty || cancelledCount > 0 || completedCount > 0) {
+           setExistingClientData(clientFound);
+        } else {
+           setExistingClientData(null);
+        }
+
       } catch (e) {
         console.log(e);
       }
@@ -265,6 +288,11 @@ export default function AppointmentsScreen({ route, navigation }: any) {
       const cleanPhone = phone.trim();
       const cleanClient = client.trim();
 
+      let finalNotes = '';
+      if (isTenthAppointment) {
+        finalNotes = '🌟 10ª Cita - APLICAR 20% DESCUENTO';
+      }
+
       // 1. Guardar la cita
       await addDoc(collection(db, 'appointments'), {
         client: cleanClient,
@@ -277,6 +305,7 @@ export default function AppointmentsScreen({ route, navigation }: any) {
         team: finalTeam,
         serviceName: finalServiceName,
         duration: finalDuration,
+        notes: finalNotes,
         createdAt: new Date()
       });
 
@@ -360,6 +389,11 @@ export default function AppointmentsScreen({ route, navigation }: any) {
             {existingClientData.isProblematic && (
               <Text style={{color: '#c0392b', fontWeight: 'bold', fontSize: 13, marginTop: 4, marginBottom: 8}}>
                 ⚠️ ATENCIÓN: Esta clienta ha cancelado o no ha acudido a 2 o más citas. Se recomienda solicitar Pago de Reserva.
+              </Text>
+            )}
+            {existingClientData.isTenth && (
+              <Text style={{color: '#27ae60', fontWeight: 'bold', fontSize: 13, marginTop: 4, marginBottom: 8}}>
+                🎁 PREMIO: ¡Ésta será la 10ª cita de la clienta! El sistema aplicará la etiqueta de descuento automáticamente.
               </Text>
             )}
             <TouchableOpacity style={styles.autofillBtn} onPress={autofillClient}>

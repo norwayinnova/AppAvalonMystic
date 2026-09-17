@@ -20,6 +20,9 @@ export default function ClientBookingScreen({ navigation }: any) {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   
+  // Fidelity
+  const [isTenthAppointment, setIsTenthAppointment] = useState(false);
+
   // Available slots logic
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [isCalculatingSlots, setIsCalculatingSlots] = useState(false);
@@ -54,17 +57,12 @@ export default function ClientBookingScreen({ navigation }: any) {
   const calculateSlots = async () => {
     setIsCalculatingSlots(true);
     try {
-      // Get all appointments for that day and team
+      // Get all appointments for that day
       const qApps = query(collection(db, 'appointments'), where('date', '==', selectedDate));
       const snap = await getDocs(qApps);
       
-      const teamApps: any[] = [];
-      snap.forEach(d => {
-        const app = d.data();
-        if ((app.team || teams[0]?.name) === selectedTeam.name && app.status !== 'cancelled') {
-           teamApps.push(app);
-        }
-      });
+      const allApps: any[] = [];
+      snap.forEach(d => allApps.push(d.data()));
 
       // Generate all possible slots 09:00 to 20:00 every 30 mins
       const allSlots: string[] = [];
@@ -78,31 +76,37 @@ export default function ClientBookingScreen({ navigation }: any) {
       const getMins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
       const duration = parseInt(selectedService.duration || '60');
 
-      const freeSlots = allSlots.filter(slot => {
-        const slotStart = getMins(slot);
-        const slotEnd = slotStart + duration;
+      let teamsToCheck = selectedTeam.id === 'any' ? teams : [selectedTeam];
+      const validSlots = new Set<string>();
 
-        // Check against all existing appointments
-        const hasConflict = teamApps.some(app => {
-          const appStart = getMins(app.time);
-          const appEnd = appStart + parseInt(app.duration || '60');
-          const isBloqueo = (app.serviceName && app.serviceName.toLowerCase().includes('bloquead')) || 
-                            (app.client && app.client.toLowerCase().includes('bloquead'));
+      teamsToCheck.forEach(teamObj => {
+        const teamApps = allApps.filter(app => (app.team || teams[0]?.name) === teamObj.name && app.status !== 'cancelled');
+        
+        allSlots.forEach(slot => {
+          const slotStart = getMins(slot);
+          const slotEnd = slotStart + duration;
 
-          if (slotStart < appEnd && slotEnd > appStart) {
-            if (isBloqueo && slotStart < appStart) {
-              // Si es un bloqueo y la cita del cliente empieza antes, se le permite solapar (ignoramos el conflicto)
-              return false;
+          const hasConflict = teamApps.some(app => {
+            const appStart = getMins(app.time);
+            const appEnd = appStart + parseInt(app.duration || '60');
+            const isBloqueo = (app.serviceName && app.serviceName.toLowerCase().includes('bloquead')) || 
+                              (app.client && app.client.toLowerCase().includes('bloquead'));
+
+            if (slotStart < appEnd && slotEnd > appStart) {
+              if (isBloqueo && slotStart < appStart) return false;
+              return true;
             }
-            return true;
-          }
-          return false;
-        });
+            return false;
+          });
 
-        return !hasConflict;
+          if (!hasConflict) {
+            validSlots.add(slot);
+          }
+        });
       });
 
-      setAvailableSlots(freeSlots);
+      const sortedSlots = Array.from(validSlots).sort();
+      setAvailableSlots(sortedSlots);
     } catch (e) {
       console.log('Error calculating slots', e);
     } finally {
@@ -110,11 +114,20 @@ export default function ClientBookingScreen({ navigation }: any) {
     }
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (step === 1) {
       if (!clientName.trim() || !clientPhone.trim() || clientPhone.length < 6) {
         alert('Por favor, introduce tu nombre y un teléfono válido.');
         return;
+      }
+      // Check fidelity silently
+      try {
+        const qFidel = query(collection(db, 'appointments'), where('phone', '==', clientPhone.trim()), where('status', '==', 'completed'));
+        const snap = await getDocs(qFidel);
+        if (snap.size === 9) setIsTenthAppointment(true);
+        else setIsTenthAppointment(false);
+      } catch (e) {
+        // ignore
       }
       setStep(2);
     } else if (step === 2) {
@@ -132,24 +145,50 @@ export default function ClientBookingScreen({ navigation }: any) {
     }
   };
 
-  const handleBook = () => {
-    if (!selectedDate || !selectedTime) {
-      alert('Selecciona fecha y hora.');
-      return;
-    }
-    
-    // Simulate Stripe Payment
-    if (window.confirm('Para confirmar la cita, debes abonar una fianza de reserva (10€) que se descontará del precio final. Serás redirigido a la pasarela de pago seguro. ¿Deseas continuar?')) {
-      // En un futuro aquí se abre el Link de Pago de Stripe
-      // window.open('https://buy.stripe.com/tu-link-de-pago', '_blank');
-      
-      // Simulamos que el pago se completa y guardamos la cita
-      saveBooking();
-    }
-  };
-
   const saveBooking = async () => {
     try {
+      let assignedTeamName = selectedTeam.name;
+
+      if (selectedTeam.id === 'any') {
+        // Find which team is actually free at the selectedTime
+        const qApps = query(collection(db, 'appointments'), where('date', '==', selectedDate));
+        const snap = await getDocs(qApps);
+        const allApps: any[] = [];
+        snap.forEach(d => allApps.push(d.data()));
+
+        const getMins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+        const slotStart = getMins(selectedTime);
+        const duration = parseInt(selectedService.duration || '60');
+        const slotEnd = slotStart + duration;
+
+        const availableTeam = teams.find(teamObj => {
+          const teamApps = allApps.filter(app => (app.team || teams[0]?.name) === teamObj.name && app.status !== 'cancelled');
+          const hasConflict = teamApps.some(app => {
+            const appStart = getMins(app.time);
+            const appEnd = appStart + parseInt(app.duration || '60');
+            const isBloqueo = (app.serviceName && app.serviceName.toLowerCase().includes('bloquead')) || 
+                              (app.client && app.client.toLowerCase().includes('bloquead'));
+            if (slotStart < appEnd && slotEnd > appStart) {
+              if (isBloqueo && slotStart < appStart) return false;
+              return true;
+            }
+            return false;
+          });
+          return !hasConflict;
+        });
+
+        if (availableTeam) {
+          assignedTeamName = availableTeam.name;
+        } else {
+           throw new Error('No hay equipos disponibles en este horario.');
+        }
+      }
+
+      let finalNotes = 'Reserva Online - Fianza pagada';
+      if (isTenthAppointment) {
+        finalNotes += '\n🌟 10ª Cita - APLICAR 20% DESCUENTO';
+      }
+
       await addDoc(collection(db, 'appointments'), {
         client: clientName.trim(),
         phone: clientPhone.trim(),
@@ -158,10 +197,10 @@ export default function ClientBookingScreen({ navigation }: any) {
         serviceName: selectedService.name,
         duration: selectedService.duration || '60',
         price: selectedService.price || '0',
-        team: selectedTeam.name,
+        team: assignedTeamName,
         status: 'pending',
         paymentStatus: 'pending', // La fianza está pagada, pero el total queda pendiente
-        notes: 'Reserva Online - Fianza pagada'
+        notes: finalNotes
       });
       alert('¡Tu reserva ha sido confirmada con éxito! Te esperamos en Avalon Mystic.');
       // Reiniciar
@@ -172,8 +211,19 @@ export default function ClientBookingScreen({ navigation }: any) {
       setSelectedTime('');
       setSelectedService(null);
       setSelectedTeam(null);
-    } catch (e) {
-      alert('Hubo un error al guardar la reserva.');
+      setIsTenthAppointment(false);
+    } catch (e: any) {
+      alert(e.message || 'Hubo un error al guardar la reserva.');
+    }
+  };
+
+  const handleBook = () => {
+    if (!selectedDate || !selectedTime) {
+      alert('Selecciona fecha y hora.');
+      return;
+    }
+    if (window.confirm('Para confirmar la cita, debes abonar una fianza de reserva (10€) que se descontará del precio final. Serás redirigido a la pasarela de pago seguro. ¿Deseas continuar?')) {
+      saveBooking();
     }
   };
 
@@ -224,6 +274,9 @@ export default function ClientBookingScreen({ navigation }: any) {
         <View style={styles.card}>
           <Text style={styles.stepTitle}>3. ¿Con quién quieres tu cita?</Text>
           <View style={styles.grid}>
+            <TouchableOpacity style={[styles.optionCard, selectedTeam?.id === 'any' && styles.optionSelected]} onPress={() => setSelectedTeam({id: 'any', name: 'Cualquiera'})}>
+              <Text style={[styles.optionTitle, selectedTeam?.id === 'any' && styles.textSelected]}>💇‍♀️ Sin preferencia (Cualquiera)</Text>
+            </TouchableOpacity>
             {teams.map(t => (
               <TouchableOpacity key={t.id} style={[styles.optionCard, selectedTeam?.id === t.id && styles.optionSelected]} onPress={() => setSelectedTeam(t)}>
                 <Text style={[styles.optionTitle, selectedTeam?.id === t.id && styles.textSelected]}>💇‍♀️ {t.name}</Text>
@@ -249,63 +302,59 @@ export default function ClientBookingScreen({ navigation }: any) {
           />
           
           {selectedDate ? (
-            <View style={{marginTop: 20}}>
-              <Text style={{fontWeight:'bold', marginBottom: 10, color:'#7A4B56'}}>Horas disponibles para el {selectedDate}:</Text>
-              {isCalculatingSlots ? (
-                <ActivityIndicator color="#D48A9A" />
-              ) : availableSlots.length > 0 ? (
-                <View style={styles.timeGrid}>
-                  {availableSlots.map(time => (
-                    <TouchableOpacity key={time} style={[styles.timeChip, selectedTime === time && styles.timeSelected]} onPress={() => setSelectedTime(time)}>
-                      <Text style={[styles.timeText, selectedTime === time && styles.textSelected]}>{time}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              ) : (
-                <Text style={{color: '#c0392b'}}>Lo sentimos, no quedan huecos libres este día para este servicio.</Text>
-              )}
-            </View>
-          ) : null}
+            isCalculatingSlots ? (
+              <ActivityIndicator size="small" color="#D48A9A" style={{marginTop: 20}} />
+            ) : availableSlots.length > 0 ? (
+              <View style={styles.timeGrid}>
+                {availableSlots.map(time => (
+                  <TouchableOpacity key={time} style={[styles.timeSlot, selectedTime === time && styles.timeSlotSelected]} onPress={() => setSelectedTime(time)}>
+                    <Text style={[styles.timeText, selectedTime === time && styles.timeTextSelected]}>{time}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.noSlotsText}>No hay huecos disponibles este día para la empleada seleccionada.</Text>
+            )
+          ) : (
+            <Text style={styles.noSlotsText}>Selecciona un día en el calendario.</Text>
+          )}
 
-          <View style={[styles.navRow, {marginTop: 30}]}>
+          <View style={styles.navRow}>
             <TouchableOpacity style={styles.btnBack} onPress={() => setStep(3)}><Text style={styles.btnBackText}>‹ Volver</Text></TouchableOpacity>
-            {selectedDate && selectedTime && (
-              <TouchableOpacity style={styles.btnPay} onPress={handleBook}>
-                <Text style={styles.btnText}>💳 Reservar y Pagar Fianza</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity style={styles.btnAction} onPress={handleBook}><Text style={styles.btnText}>Confirmar y Pagar Fianza</Text></TouchableOpacity>
           </View>
         </View>
       )}
-      
-      <View style={{height: 100}} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fcf8f9', padding: 20 },
-  header: { alignItems: 'center', marginVertical: 30 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#7A4B56' },
-  subtitle: { fontSize: 16, color: '#D48A9A', marginTop: 5 },
-  card: { backgroundColor: '#fff', padding: 20, borderRadius: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, elevation: 3 },
-  stepTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 20 },
-  input: { backgroundColor: '#f5f7fa', padding: 15, borderRadius: 10, marginBottom: 15, fontSize: 16 },
-  btnAction: { backgroundColor: '#7A4B56', padding: 15, borderRadius: 10, alignItems: 'center' },
-  btnPay: { backgroundColor: '#27ae60', padding: 15, borderRadius: 10, alignItems: 'center', flex: 1, marginLeft: 10 },
-  btnBack: { backgroundColor: '#e0e8f0', padding: 15, borderRadius: 10, alignItems: 'center', flex: 1, marginRight: 10 },
-  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  btnBackText: { color: '#555', fontWeight: 'bold', fontSize: 16 },
+  container: { flex: 1, backgroundColor: '#f2f4f7' },
+  header: { padding: 30, backgroundColor: '#D48A9A', alignItems: 'center' },
+  title: { fontSize: 26, fontWeight: 'bold', color: '#fff' },
+  subtitle: { fontSize: 16, color: '#fff', opacity: 0.9, marginTop: 5 },
+  card: { backgroundColor: '#fff', margin: 15, borderRadius: 12, padding: 20, elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowOffset: {width:0, height:2} },
+  stepTitle: { fontSize: 20, fontWeight: 'bold', color: '#333', marginBottom: 20, textAlign: 'center' },
+  input: { borderWidth: 1, borderColor: '#ddd', padding: 15, borderRadius: 10, fontSize: 16, marginBottom: 15, backgroundColor: '#fafafa' },
+  
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  optionCard: { width: '48%', borderWidth: 1, borderColor: '#eee', padding: 15, borderRadius: 10, marginBottom: 15, alignItems: 'center', backgroundColor: '#fafafa' },
+  optionSelected: { borderColor: '#D48A9A', backgroundColor: '#fdf5f7' },
+  optionTitle: { fontWeight: 'bold', color: '#555', textAlign: 'center' },
+  optionSub: { fontSize: 12, color: '#888', marginTop: 5 },
+  textSelected: { color: '#D48A9A' },
+
   navRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
-  optionCard: { width: '48%', backgroundColor: '#f5f7fa', padding: 15, borderRadius: 10, borderWidth: 2, borderColor: 'transparent', alignItems: 'center' },
-  optionSelected: { borderColor: '#D48A9A', backgroundColor: '#fff5f7' },
-  optionTitle: { fontWeight: 'bold', color: '#333', textAlign: 'center', marginBottom: 5 },
-  optionSub: { fontSize: 12, color: '#777' },
-  textSelected: { color: '#7A4B56' },
-  textUnselected: { color: '#555' },
-  timeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  timeChip: { backgroundColor: '#f5f7fa', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 20, borderWidth: 1, borderColor: '#e0e8f0' },
-  timeSelected: { backgroundColor: '#7A4B56', borderColor: '#7A4B56' },
-  timeText: { color: '#333', fontWeight: 'bold' }
+  btnAction: { backgroundColor: '#D48A9A', paddingVertical: 15, paddingHorizontal: 20, borderRadius: 10, flex: 1, alignItems: 'center', marginLeft: 5 },
+  btnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  btnBack: { backgroundColor: '#eee', paddingVertical: 15, paddingHorizontal: 20, borderRadius: 10, flex: 1, alignItems: 'center', marginRight: 5 },
+  btnBackText: { color: '#555', fontSize: 16, fontWeight: 'bold' },
+
+  timeGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', marginTop: 20 },
+  timeSlot: { width: '22%', borderWidth: 1, borderColor: '#2ecc71', paddingVertical: 12, borderRadius: 8, alignItems: 'center', marginBottom: 10, marginRight: '3%', backgroundColor: '#fdfdfd' },
+  timeSlotSelected: { backgroundColor: '#2ecc71' },
+  timeText: { color: '#2ecc71', fontWeight: 'bold', fontSize: 16 },
+  timeTextSelected: { color: '#fff' },
+  noSlotsText: { textAlign: 'center', marginTop: 20, color: '#888', fontStyle: 'italic' }
 });
