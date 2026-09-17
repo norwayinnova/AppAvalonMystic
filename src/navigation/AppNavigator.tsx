@@ -98,7 +98,7 @@ function TopTabs() {
   const showAdminOnly = isAdmin; // Solo admin ve Dashboard
 
   return (
-    <Tab.Navigator tabBar={(props) => <CustomTopTabBar {...props} />}>
+    <Tab.Navigator tabBar={(props) => <CustomTopTabBar {...props} />} screenOptions={{ swipeEnabled: false }}>
       {showAdminOnly && <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ tabBarLabel: '📊 Dashboard' }} />}
       
       <Tab.Screen name="Calendar" component={CalendarScreen} options={{ tabBarLabel: '📅 Calendario' }} initialParams={{ role, teamName }} />

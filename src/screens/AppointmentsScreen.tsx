@@ -427,45 +427,72 @@ export default function AppointmentsScreen({ route, navigation }: any) {
 
 
       <Text style={styles.subtitle}>1. Servicio:</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollRow}>
-        {services.map(srv => (
-          <TouchableOpacity 
-            key={srv.id} 
-            style={[styles.chipBtn, selectedService?.id === srv.id && styles.chipSelected]}
-            onPress={() => handleSelectService(srv)}
-          >
-            <Text style={selectedService?.id === srv.id ? styles.textSelected : styles.textUnselected}>
-              {srv.name} (⏱ {srv.duration}m{srv.price ? ` · 💶 ${srv.price}€` : ''})
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <TouchableOpacity 
+        style={styles.dropdownBtn} 
+        onPress={() => {
+          // Toggle custom dropdown state (we can just use showCalendar logic or inline it)
+          setCustomDuration(customDuration === 'show_services' ? '' : 'show_services');
+        }}
+      >
+        <Text style={styles.dropdownText}>
+          {selectedService ? `✨ ${selectedService.name} (⏱ ${selectedService.duration}m)` : '▼ Seleccionar servicio...'}
+        </Text>
+      </TouchableOpacity>
+
+      {customDuration === 'show_services' && (
+        <View style={styles.dropdownList}>
+          {services.map(srv => (
+            <TouchableOpacity 
+              key={srv.id} 
+              style={[styles.dropdownItem, selectedService?.id === srv.id && styles.dropdownItemSelected]}
+              onPress={() => { handleSelectService(srv); setCustomDuration(''); }}
+            >
+              <Text style={selectedService?.id === srv.id ? styles.dropdownItemTextSelected : styles.dropdownItemText}>
+                {srv.name} (⏱ {srv.duration}m{srv.price ? ` · 💶 ${srv.price}€` : ''})
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       {selectedService?.name?.toLowerCase().includes('bloquead') && !isFullDayBlock && (
-        <View style={{ marginBottom: 12 }}>
+        <View style={{ marginBottom: 12, marginTop: 10 }}>
           <Text style={styles.inputLabel}>Duración del bloqueo (en minutos):</Text>
           <TextInput
             style={styles.input}
             placeholder="Ej: 90"
             keyboardType="numeric"
-            value={customDuration}
+            value={customDuration !== 'show_services' && customDuration !== 'show_teams' ? customDuration : ''}
             onChangeText={setCustomDuration}
           />
         </View>
       )}
 
-
-
       {isAdmin ? (
         <>
           <Text style={styles.subtitle}>2. Equipo Asignado:</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollRow}>
-            {activeTeamsList.map(t => (
-              <TouchableOpacity key={t} style={[styles.chipBtn, (team || activeTeamsList[0]) === t && styles.chipSelected]} onPress={() => setTeam(t)}>
-                <Text style={(team || activeTeamsList[0]) === t ? styles.textSelected : styles.textUnselected}>💇‍♀️ {t}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          <TouchableOpacity 
+            style={styles.dropdownBtn} 
+            onPress={() => setCustomDuration(customDuration === 'show_teams' ? '' : 'show_teams')}
+          >
+            <Text style={styles.dropdownText}>
+              {team ? `💇‍♀️ ${team}` : '▼ Seleccionar equipo...'}
+            </Text>
+          </TouchableOpacity>
+
+          {customDuration === 'show_teams' && (
+            <View style={styles.dropdownList}>
+              {activeTeamsList.map(t => (
+                <TouchableOpacity 
+                  key={t} 
+                  style={[styles.dropdownItem, (team || activeTeamsList[0]) === t && styles.dropdownItemSelected]} 
+                  onPress={() => { setTeam(t); setCustomDuration(''); }}
+                >
+                  <Text style={(team || activeTeamsList[0]) === t ? styles.dropdownItemTextSelected : styles.dropdownItemText}>💇‍♀️ {t}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </>
       ) : (
         <Text style={styles.subtitle}>2. Asignado a ti (💇‍♀️ {team})</Text>
@@ -486,27 +513,45 @@ export default function AppointmentsScreen({ route, navigation }: any) {
         </View>
       )}
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollRow}>
-        {timeSlots.map(t => {
-          const status = checkSlotStatus(t);
-          const isConflict = selectedService ? status.conflict : false;
-          let chipStyle: any = styles.chipBtn; let textStyle: any = styles.textUnselected;
-          if (time === t) { chipStyle = styles.chipSelected; textStyle = styles.textSelected; } 
-          else if (selectedService) {
-             if (isConflict) { chipStyle = styles.chipConflict; textStyle = styles.textConflict; } 
-             else { chipStyle = styles.chipAvailable; textStyle = styles.textAvailable; }
-          }
-          return (
-            <TouchableOpacity key={t} style={chipStyle} onPress={() => { if (isConflict) alert(status.reason); setTime(t); }}>
-              <Text style={textStyle}>{t}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+      {date && (
+        <View style={{ marginTop: 10 }}>
+          <Text style={styles.subtitle}>Hora de la cita:</Text>
+          <TouchableOpacity 
+            style={styles.dropdownBtn} 
+            onPress={() => setCustomDuration(customDuration === 'show_times' ? '' : 'show_times')}
+          >
+            <Text style={styles.dropdownText}>
+              {time ? `⏰ ${time}` : '▼ Seleccionar hora...'}
+            </Text>
+          </TouchableOpacity>
+
+          {customDuration === 'show_times' && (
+            <View style={[styles.dropdownList, {flexDirection: 'row', flexWrap: 'wrap', padding: 10}]}>
+              {timeSlots.map(t => {
+                const status = checkSlotStatus(t);
+                const isConflict = selectedService ? status.conflict : false;
+                let chipStyle: any = styles.chipBtn; let textStyle: any = styles.textUnselected;
+                if (time === t) { chipStyle = styles.chipSelected; textStyle = styles.textSelected; } 
+                else if (selectedService) {
+                   if (isConflict) { chipStyle = styles.chipConflict; textStyle = styles.textConflict; } 
+                   else { chipStyle = styles.chipAvailable; textStyle = styles.textAvailable; }
+                }
+                return (
+                  <TouchableOpacity key={t} style={chipStyle} onPress={() => { if (isConflict) alert(status.reason); else { setTime(t); setCustomDuration(''); } }}>
+                    <Text style={textStyle}>{t}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </View>
+      )}
 
       <View style={styles.buttonRow}>
         <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.navigate('Calendar')}><Text style={styles.cancelButtonText}>Cancelar</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.saveButton} onPress={saveAppointment}><Text style={styles.saveButtonText}>Guardar Cita</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.saveButton} onPress={saveAppointment} disabled={saving}>
+          {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Guardar Cita</Text>}
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );

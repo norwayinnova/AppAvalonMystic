@@ -697,97 +697,98 @@ export default function CalendarScreen({ route, navigation }: any) {
 
         return (
           <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-            {/* Cabeceras de equipo */}
-            <View style={{ flexDirection: 'row', marginLeft: LABEL_WIDTH, borderBottomWidth: 2, borderBottomColor: '#e0e8f0' }}>
-              {visibleTeams.map(t => {
-                const teamApps = appointments.filter(a => (a.team || teams[0]?.name) === t.name);
-                return (
-                  <View key={t.id} style={{ width: COL_WIDTH, paddingHorizontal: 8, paddingVertical: 10, borderRightWidth: 1, borderRightColor: '#e0e8f0', backgroundColor: '#f8fafc' }}>
-                    <Text style={{ fontWeight: 'bold', color: '#7A4B56', fontSize: 13 }}>🚐 {t.name}</Text>
-                    {t.members ? <Text style={{ fontSize: 11, color: '#888', marginTop: 2 }}>👥 {t.members}</Text> : null}
-                    <Text style={{ fontSize: 11, color: '#D48A9A', marginTop: 2, fontWeight: 'bold' }}>{teamApps.length} cita{teamApps.length !== 1 ? 's' : ''}</Text>
-                  </View>
-                );
-              })}
-            </View>
-
-            {/* Cuerpo del grid */}
             <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-              <View style={{ flexDirection: 'row' }}>
-
-                {/* Etiquetas de horas */}
-                <View style={{ width: LABEL_WIDTH }}>
-                  {Array.from({ length: GRID_HEIGHT / (60 * PX_PER_MIN) + 1 }, (_, i) => {
-                    const h = START_HOUR + i;
-                    if (h > END_HOUR) return null;
+              <View style={{ flexDirection: 'column' }}>
+                {/* Cabeceras de equipo */}
+                <View style={{ flexDirection: 'row', marginLeft: LABEL_WIDTH, borderBottomWidth: 2, borderBottomColor: '#e0e8f0' }}>
+                  {visibleTeams.map(t => {
+                    const teamApps = appointments.filter(a => (a.team || teams[0]?.name) === t.name);
                     return (
-                      <View key={h} style={{ height: 60 * PX_PER_MIN, justifyContent: 'flex-start', paddingTop: 4, paddingRight: 6 }}>
-                        <Text style={{ fontSize: 11, color: '#aaa', textAlign: 'right' }}>{String(Math.floor(h)).padStart(2,'0')}:00</Text>
+                      <View key={t.id} style={{ width: COL_WIDTH, paddingHorizontal: 8, paddingVertical: 10, borderRightWidth: 1, borderRightColor: '#e0e8f0', backgroundColor: '#f8fafc' }}>
+                        <Text style={{ fontWeight: 'bold', color: '#7A4B56', fontSize: 13 }}>🚐 {t.name}</Text>
+                        {t.members ? <Text style={{ fontSize: 11, color: '#888', marginTop: 2 }}>👥 {t.members}</Text> : null}
+                        <Text style={{ fontSize: 11, color: '#D48A9A', marginTop: 2, fontWeight: 'bold' }}>{teamApps.length} cita{teamApps.length !== 1 ? 's' : ''}</Text>
                       </View>
                     );
                   })}
                 </View>
 
-                {/* Columnas por equipo */}
-                {visibleTeams.map(t => {
-                  const teamApps = appointments.filter(a => (a.team || teams[0]?.name) === t.name);
-                  return (
-                    <View key={t.id} style={{ width: COL_WIDTH, height: GRID_HEIGHT, position: 'relative', borderRightWidth: 1, borderRightColor: '#e8eef4' }}>
-                      {/* Líneas de hora */}
-                      {HOUR_LINES.map(h => (
-                        <View key={h} style={{ position: 'absolute', top: (h - START_HOUR) * 60 * PX_PER_MIN, left: 0, right: 0, height: 1, backgroundColor: h % 1 === 0 ? '#e8eef4' : '#f4f6f8' }} />
-                      ))}
+                {/* Cuerpo del grid */}
+                <View style={{ flexDirection: 'row' }}>
+                  {/* Etiquetas de horas */}
+                  <View style={{ width: LABEL_WIDTH }}>
+                    {Array.from({ length: GRID_HEIGHT / (60 * PX_PER_MIN) + 1 }, (_, i) => {
+                      const h = START_HOUR + i;
+                      if (h > END_HOUR) return null;
+                      return (
+                        <View key={h} style={{ height: 60 * PX_PER_MIN, justifyContent: 'flex-start', paddingTop: 4, paddingRight: 6 }}>
+                          <Text style={{ fontSize: 11, color: '#aaa', textAlign: 'right' }}>{String(Math.floor(h)).padStart(2,'0')}:00</Text>
+                        </View>
+                      );
+                    })}
+                  </View>
 
-                      {/* Bloque de media hora */}
-                      {HOUR_LINES.map(h => (
-                        <View key={`h-${h}`} style={{ position: 'absolute', top: (h - START_HOUR) * 60 * PX_PER_MIN + 30 * PX_PER_MIN, left: 0, right: 0, height: 1, backgroundColor: '#FDF9fa', borderStyle: 'dashed' }} />
-                      ))}
+                  {/* Columnas por equipo */}
+                  {visibleTeams.map(t => {
+                    const teamApps = appointments.filter(a => (a.team || teams[0]?.name) === t.name);
+                    return (
+                      <View key={t.id} style={{ width: COL_WIDTH, height: GRID_HEIGHT, position: 'relative', borderRightWidth: 1, borderRightColor: '#e8eef4' }}>
+                        {/* Líneas de hora */}
+                        {HOUR_LINES.map(h => (
+                          <View key={h} style={{ position: 'absolute', top: (h - START_HOUR) * 60 * PX_PER_MIN, left: 0, right: 0, height: 1, backgroundColor: h % 1 === 0 ? '#e8eef4' : '#f4f6f8' }} />
+                        ))}
 
-                      {/* Citas posicionadas */}
-                      {teamApps.map(item => {
-                        const top = timeToTop(item.time);
-                        const dur = parseInt(item.duration || '60');
-                        const height = Math.max(dur * PX_PER_MIN, 30);
-                        let colors = STATUS_COLORS[item.status || 'pending'];
-                        
-                        const isBloqueo = (item.serviceName && item.serviceName.toLowerCase().includes('bloquead')) || 
-                                          (item.client && item.client.toLowerCase().includes('bloquead'));
-                        if (isBloqueo) {
-                          colors = { bg: '#f4e8fa', border: '#9b59b6', text: '#8e44ad' };
-                        }
+                        {/* Bloque de media hora */}
+                        {HOUR_LINES.map(h => (
+                          <View key={`h-${h}`} style={{ position: 'absolute', top: (h - START_HOUR) * 60 * PX_PER_MIN + 30 * PX_PER_MIN, left: 0, right: 0, height: 1, backgroundColor: '#FDF9fa', borderStyle: 'dashed' }} />
+                        ))}
 
-                        return (
-                          <TouchableOpacity
-                            key={item.id}
-                            onPress={() => setSelectedAppointment(item)}
-                            style={{
-                              position: 'absolute',
-                              top,
-                              left: 3,
-                              right: 3,
-                              height,
-                              backgroundColor: colors.bg,
-                              borderRadius: 6,
-                              borderLeftWidth: 3,
-                              borderLeftColor: colors.border,
-                              borderWidth: 1,
-                              borderColor: colors.border + '55',
-                              paddingHorizontal: 6,
-                              paddingVertical: 4,
-                              overflow: 'hidden',
-                              elevation: 2,
-                            }}
-                          >
-                            <Text style={{ fontSize: 11, fontWeight: 'bold', color: colors.text }} numberOfLines={1}>{item.time} · {item.serviceName}</Text>
-                            {height > 35 && <Text style={{ fontSize: 10, color: colors.text, opacity: 0.75, marginTop: 1 }} numberOfLines={1}>👤 {item.client}</Text>}
-                            {height > 55 && item.address && <Text style={{ fontSize: 10, color: colors.text, opacity: 0.6, marginTop: 1 }} numberOfLines={1}>📍 {item.address}</Text>}
-                            {conflicts[item.id] && <Text style={{ fontSize: 10, color: '#d9534f' }}>⚠️</Text>}
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  );
-                })}
+                        {/* Citas posicionadas */}
+                        {teamApps.map(item => {
+                          const top = timeToTop(item.time);
+                          const dur = parseInt(item.duration || '60');
+                          const height = Math.max(dur * PX_PER_MIN, 30);
+                          let colors = STATUS_COLORS[item.status || 'pending'];
+                          
+                          const isBloqueo = (item.serviceName && item.serviceName.toLowerCase().includes('bloquead')) || 
+                                            (item.client && item.client.toLowerCase().includes('bloquead'));
+                          if (isBloqueo) {
+                            colors = { bg: '#f4e8fa', border: '#9b59b6', text: '#8e44ad' };
+                          }
+
+                          return (
+                            <TouchableOpacity
+                              key={item.id}
+                              onPress={() => setSelectedAppointment(item)}
+                              style={{
+                                position: 'absolute',
+                                top,
+                                left: 3,
+                                right: 3,
+                                height,
+                                backgroundColor: colors.bg,
+                                borderRadius: 6,
+                                borderLeftWidth: 3,
+                                borderLeftColor: colors.border,
+                                borderWidth: 1,
+                                borderColor: colors.border + '55',
+                                paddingHorizontal: 6,
+                                paddingVertical: 4,
+                                overflow: 'hidden',
+                                elevation: 2,
+                              }}
+                            >
+                              <Text style={{ fontSize: 11, fontWeight: 'bold', color: colors.text }} numberOfLines={1}>{item.time} · {item.serviceName}</Text>
+                              {height > 35 && <Text style={{ fontSize: 10, color: colors.text, opacity: 0.75, marginTop: 1 }} numberOfLines={1}>👤 {item.client}</Text>}
+                              {height > 55 && item.address && <Text style={{ fontSize: 10, color: colors.text, opacity: 0.6, marginTop: 1 }} numberOfLines={1}>📍 {item.address}</Text>}
+                              {conflicts[item.id] && <Text style={{ fontSize: 10, color: '#d9534f' }}>⚠️</Text>}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    );
+                  })}
+                </View>
               </View>
             </ScrollView>
           </ScrollView>
