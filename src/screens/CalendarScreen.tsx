@@ -241,7 +241,7 @@ export default function CalendarScreen({ route, navigation }: any) {
   const requestGoogleReview = async (item: Appointment) => {
     if (!item.phone) return alert('El cliente no tiene teléfono guardado.');
     
-    const message = `¡Hola ${item.client}! 👋\nEsperamos que hayas quedado encantado con la limpieza de tu ${item.serviceName.toLowerCase()}. ✨\n\nPara nosotros tu opinión es fundamental. Si te ha gustado el resultado, ¿nos regalarías 1 minuto para dejarnos 5 estrellitas en Google? Nos ayuda muchísimo a seguir creciendo. 🙏\n\n⭐ Puedes hacerlo aquí: https://g.page/r/Cby71i4U3YJmEBM/review\n\n¡Mil gracias por confiar en Avalon Mystic!`;
+    const message = `¡Hola ${item.client}! 👋\nEsperamos que hayas quedado encantado con el servicio de ${item.serviceName.toLowerCase()}. ✨\n\nPara nosotros tu opinión es fundamental. Si te ha gustado el resultado, ¿nos regalarías 1 minuto para dejarnos 5 estrellitas en Google? Nos ayuda muchísimo a seguir creciendo. 🙏\n\n⭐ Puedes hacerlo aquí: https://share.google/8mzwiMXmLf2HoZoOS\n\n¡Mil gracias por confiar en Avalon Mystic!`;
     
     let phoneNum = item.phone.replace(/\s+/g, '');
     if (phoneNum.length === 9 && (phoneNum.startsWith('6') || phoneNum.startsWith('7') || phoneNum.startsWith('8') || phoneNum.startsWith('9'))) {
@@ -1184,31 +1184,18 @@ export default function CalendarScreen({ route, navigation }: any) {
               </ScrollView>
 
               <View style={styles.statusActionRow}>
-                {(!selectedAppointment.status || selectedAppointment.status === 'pending') ? (
-                  <TouchableOpacity style={styles.startApptBtn} onPress={() => startService(selectedAppointment)}>
-                    <Text style={styles.startApptBtnText}>▶️ Empezar Servicio</Text>
-                  </TouchableOpacity>
-                ) : selectedAppointment.status === 'in_progress' ? (
-                  <TouchableOpacity style={styles.completeApptBtn} onPress={() => completeService(selectedAppointment)}>
-                    <Text style={styles.completeApptBtnText}>✅ Finalizar Servicio</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={{ flex: 1, gap: 10 }}>
-                    <View style={styles.completedBadge}>
-                      <Text style={styles.completedBadgeText}>Servicio Completado ✓</Text>
-                    </View>
-                    {selectedAppointment.phone ? (
-                      <TouchableOpacity 
-                        style={[styles.reviewBtn, selectedAppointment.reviewRequested && styles.reviewBtnSent]} 
-                        onPress={() => requestGoogleReview(selectedAppointment)}
-                      >
-                        <Text style={[styles.reviewBtnText, selectedAppointment.reviewRequested && styles.reviewBtnTextSent]}>
-                          {selectedAppointment.reviewRequested ? '✅ Reseña Solicitada' : '⭐ Solicitar Reseña en Google'}
-                        </Text>
-                      </TouchableOpacity>
-                    ) : null}
-                  </View>
-                )}
+                <View style={{ flex: 1, gap: 10 }}>
+                  {selectedAppointment.phone ? (
+                    <TouchableOpacity 
+                      style={[styles.reviewBtn, selectedAppointment.reviewRequested && styles.reviewBtnSent]} 
+                      onPress={() => requestGoogleReview(selectedAppointment)}
+                    >
+                      <Text style={[styles.reviewBtnText, selectedAppointment.reviewRequested && styles.reviewBtnTextSent]}>
+                        {selectedAppointment.reviewRequested ? '✅ Reseña Solicitada' : '⭐ Solicitar Reseña en Google'}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
                 
                 {isAdmin && (
                   <TouchableOpacity style={styles.deleteApptIconBtn} onPress={() => deleteAppointment(selectedAppointment.id)}>
