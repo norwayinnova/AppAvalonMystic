@@ -14,7 +14,10 @@ import { collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs }
 import { Calendar } from 'react-native-calendars';
 import { db } from '../config/firebase';
 
-export default function AppointmentsScreen({ navigation }: any) {
+export default function AppointmentsScreen({ route, navigation }: any) {
+  const { role, teamName } = route?.params || { role: 'admin', teamName: null };
+  const isAdmin = role === 'admin' || role === 'management';
+
   const [client, setClient] = useState('');
   const [phone, setPhone] = useState('');
   const [existingClientData, setExistingClientData] = useState<any>(null);
@@ -31,7 +34,7 @@ export default function AppointmentsScreen({ navigation }: any) {
   const [isValidated, setIsValidated] = useState(false);
 
   const [price, setPrice] = useState('');
-  const [team, setTeam] = useState('Equipo 1');
+  const [team, setTeam] = useState(teamName || 'Equipo 1');
   const [teams, setTeams] = useState<any[]>([]);
   const [showCalendar, setShowCalendar] = useState(false);
   
@@ -353,14 +356,20 @@ export default function AppointmentsScreen({ navigation }: any) {
 
 
 
-      <Text style={styles.subtitle}>2. Equipo Asignado:</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollRow}>
-        {activeTeamsList.map(t => (
-          <TouchableOpacity key={t} style={[styles.chipBtn, (team || activeTeamsList[0]) === t && styles.chipSelected]} onPress={() => setTeam(t)}>
-            <Text style={(team || activeTeamsList[0]) === t ? styles.textSelected : styles.textUnselected}>🚐 {t}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      {isAdmin ? (
+        <>
+          <Text style={styles.subtitle}>2. Equipo Asignado:</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollRow}>
+            {activeTeamsList.map(t => (
+              <TouchableOpacity key={t} style={[styles.chipBtn, (team || activeTeamsList[0]) === t && styles.chipSelected]} onPress={() => setTeam(t)}>
+                <Text style={(team || activeTeamsList[0]) === t ? styles.textSelected : styles.textUnselected}>💇‍♀️ {t}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </>
+      ) : (
+        <Text style={styles.subtitle}>2. Asignado a ti (💇‍♀️ {team})</Text>
+      )}
 
       <Text style={styles.subtitle}>3. Día y Hora:</Text>
       <TouchableOpacity style={styles.dropdownBtn} onPress={() => setShowCalendar(!showCalendar)}>

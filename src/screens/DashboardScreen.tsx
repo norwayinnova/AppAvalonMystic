@@ -90,6 +90,16 @@ export default function DashboardScreen() {
     }
   };
 
+  const handleMarkAsPaid = async (id: string) => {
+    try {
+      const { doc, updateDoc } = require('firebase/firestore');
+      await updateDoc(doc(db, 'appointments', id), { paymentStatus: 'paid' });
+      alert('¡Pago registrado con éxito!');
+    } catch (e) {
+      alert('Error al actualizar el pago.');
+    }
+  };
+
   const stats = useMemo(() => {
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
@@ -212,12 +222,21 @@ export default function DashboardScreen() {
         <Text style={[styles.cardTitle, {color: '#f39c12'}]}>⏳ Deudas y Pagos Pendientes</Text>
         {stats.pendingPayments.length > 0 ? (
           stats.pendingPayments.map((app: any) => (
-            <View key={app.id} style={styles.teamRow}>
-              <View>
-                <Text style={styles.teamName}>👤 {app.client}</Text>
-                <Text style={styles.teamStats}>📅 {app.date} - ✨ {app.serviceName}</Text>
+            <View key={app.id} style={[styles.teamRow, {flexDirection: 'column', alignItems: 'flex-start'}]}>
+              <View style={{flexDirection: 'row', justifyContent: 'space-between', width: '100%'}}>
+                <View>
+                  <Text style={styles.teamName}>👤 {app.client}</Text>
+                  <Text style={styles.teamStats}>📅 {app.date} - ✨ {app.serviceName}</Text>
+                  <Text style={[styles.teamStats, {color: '#D48A9A', fontWeight: 'bold', marginTop: 2}]}>💇‍♀️ Atendido por: {app.team || 'Sin asignar'}</Text>
+                </View>
+                <Text style={[styles.summaryValue, {fontSize: 18, color: '#f39c12'}]}>{app.finalPrice} €</Text>
               </View>
-              <Text style={[styles.summaryValue, {fontSize: 16, color: '#f39c12'}]}>{app.finalPrice} €</Text>
+              <TouchableOpacity 
+                style={[styles.btnAction, {backgroundColor: '#4a9b40', alignSelf: 'flex-end', paddingVertical: 8, marginTop: 10}]}
+                onPress={() => handleMarkAsPaid(app.id)}
+              >
+                <Text style={styles.btnText}>✅ Marcar como Pagado</Text>
+              </TouchableOpacity>
             </View>
           ))
         ) : (

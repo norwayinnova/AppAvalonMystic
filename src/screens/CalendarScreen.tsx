@@ -38,6 +38,7 @@ interface Appointment {
   completedAt?: string;
   reviewRequested?: boolean;
   paymentStatus?: 'paid' | 'pending';
+  paymentMethod?: 'cash' | 'bizum';
   finalPrice?: string;
 }
 
@@ -463,7 +464,7 @@ export default function CalendarScreen({ route, navigation }: any) {
     }
   };
 
-  const completeService = async (item: Appointment, payStatus: 'paid' | 'pending') => {
+  const completeService = async (item: Appointment, payStatus: 'paid' | 'pending', payMethod?: 'cash' | 'bizum') => {
     try {
       if (!finalPriceInput.trim()) {
         alert('Por favor, indica el importe final cobrado o a deber.');
@@ -474,10 +475,11 @@ export default function CalendarScreen({ route, navigation }: any) {
          status: 'completed',
          completedAt: nowStr,
          paymentStatus: payStatus,
+         paymentMethod: payMethod || null,
          finalPrice: finalPriceInput
       });
       if (selectedAppointment && selectedAppointment.id === item.id) {
-         setSelectedAppointment({ ...selectedAppointment, status: 'completed', completedAt: nowStr, paymentStatus: payStatus, finalPrice: finalPriceInput });
+         setSelectedAppointment({ ...selectedAppointment, status: 'completed', completedAt: nowStr, paymentStatus: payStatus, paymentMethod: payMethod, finalPrice: finalPriceInput });
       }
       alert(payStatus === 'paid' ? '¡Servicio cobrado correctamente!' : 'Servicio guardado como Pago Pendiente.');
     } catch (e) {
@@ -1164,7 +1166,7 @@ export default function CalendarScreen({ route, navigation }: any) {
                 {selectedAppointment.status === 'completed' ? (
                   <View style={styles.completedBadge}>
                     <Text style={styles.completedBadgeText}>
-                      ✓ Finalizado ({selectedAppointment.paymentStatus === 'paid' ? 'Cobrado' : 'Pago Pendiente'})
+                      ✓ Finalizado ({selectedAppointment.paymentStatus === 'paid' ? `Cobrado en ${selectedAppointment.paymentMethod === 'bizum' ? 'Bizum' : 'Efectivo'}` : 'Pago Pendiente'})
                       {selectedAppointment.finalPrice ? ` - ${selectedAppointment.finalPrice}€` : ''}
                     </Text>
                   </View>
@@ -1178,12 +1180,15 @@ export default function CalendarScreen({ route, navigation }: any) {
                       value={finalPriceInput}
                       onChangeText={setFinalPriceInput}
                     />
-                    <View style={{flexDirection: 'row', gap: 10, marginTop: 5}}>
-                      <TouchableOpacity style={[styles.completeApptBtn, {backgroundColor: '#D48A9A'}]} onPress={() => completeService(selectedAppointment, 'paid')}>
-                        <Text style={styles.completeApptBtnText}>✅ Cobrado</Text>
+                    <View style={{flexDirection: 'row', gap: 6, marginTop: 5, flexWrap: 'wrap'}}>
+                      <TouchableOpacity style={[styles.completeApptBtn, {backgroundColor: '#4a9b40'}]} onPress={() => completeService(selectedAppointment, 'paid', 'cash')}>
+                        <Text style={styles.completeApptBtnText}>💵 Efectivo</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.completeApptBtn, {backgroundColor: '#00a4bd'}]} onPress={() => completeService(selectedAppointment, 'paid', 'bizum')}>
+                        <Text style={styles.completeApptBtnText}>📱 Bizum</Text>
                       </TouchableOpacity>
                       <TouchableOpacity style={[styles.completeApptBtn, {backgroundColor: '#f39c12'}]} onPress={() => completeService(selectedAppointment, 'pending')}>
-                        <Text style={styles.completeApptBtnText}>⏳ Dejado a deber</Text>
+                        <Text style={styles.completeApptBtnText}>⏳ A deber</Text>
                       </TouchableOpacity>
                     </View>
                   </>
