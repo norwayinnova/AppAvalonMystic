@@ -599,9 +599,13 @@ export default function CalendarScreen({ route, navigation }: any) {
                     </Text>
                     {/* Puntos de citas */}
                     <View style={styles.monthDots}>
-                      {dayApps.slice(0, 3).map((a, i) => (
-                        <View key={i} style={[styles.monthDot, { backgroundColor: STATUS_COLOR[a.status || 'pending'] }]} />
-                      ))}
+                      {dayApps.slice(0, 3).map((a, i) => {
+                        let dotColor = STATUS_COLOR[a.status || 'pending'];
+                        const isBloqueo = (a.serviceName && a.serviceName.toLowerCase().includes('bloquead')) || 
+                                          (a.client && a.client.toLowerCase().includes('bloquead'));
+                        if (isBloqueo) dotColor = '#9b59b6';
+                        return <View key={i} style={[styles.monthDot, { backgroundColor: dotColor }]} />;
+                      })}
                       {dayApps.length > 3 && <Text style={styles.monthDotMore}>+{dayApps.length - 3}</Text>}
                     </View>
                   </TouchableOpacity>
@@ -614,6 +618,7 @@ export default function CalendarScreen({ route, navigation }: any) {
               <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#f39c12' }]} /><Text style={styles.legendText}>Pendiente</Text></View>
               <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#D48A9A' }]} /><Text style={styles.legendText}>Completado</Text></View>
               <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#e74c3c' }]} /><Text style={styles.legendText}>Cancelado</Text></View>
+              <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#9b59b6' }]} /><Text style={styles.legendText}>Bloqueo</Text></View>
             </View>
 
             {/* Resumen del mes */}
@@ -743,7 +748,14 @@ export default function CalendarScreen({ route, navigation }: any) {
                         const top = timeToTop(item.time);
                         const dur = parseInt(item.duration || '60');
                         const height = Math.max(dur * PX_PER_MIN, 30);
-                        const colors = STATUS_COLORS[item.status || 'pending'];
+                        let colors = STATUS_COLORS[item.status || 'pending'];
+                        
+                        const isBloqueo = (item.serviceName && item.serviceName.toLowerCase().includes('bloquead')) || 
+                                          (item.client && item.client.toLowerCase().includes('bloquead'));
+                        if (isBloqueo) {
+                          colors = { bg: '#f4e8fa', border: '#9b59b6', text: '#8e44ad' };
+                        }
+
                         return (
                           <TouchableOpacity
                             key={item.id}
