@@ -526,9 +526,9 @@ const styles = StyleSheet.create({
 
   chartContainer: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', height: 150, paddingTop: 10 },
   chartCol: { alignItems: 'center', justifyContent: 'flex-end', flex: 1 },
-  chartBar: { width: 14, backgroundColor: '#D48A9A', borderRadius: 4, opacity: 0.8 },
+  chartBar: { width: 14, backgroundColor: '#2ecc71', borderRadius: 4, opacity: 0.8 },
   chartLabelText: { fontSize: 10, color: '#999', marginTop: 4 },
-  chartValueText: { fontSize: 9, color: '#D48A9A', marginBottom: 2, fontWeight: 'bold' },
+  chartValueText: { fontSize: 9, color: '#2ecc71', marginBottom: 2, fontWeight: 'bold' },
 
   teamRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
   teamName: { fontWeight: 'bold', fontSize: 14, color: '#333' },
