@@ -19,6 +19,8 @@ export default function CalculatorScreen() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [percentages, setPercentages] = useState<Record<string, string>>({});
 
+  const [expenses, setExpenses] = useState<any[]>([]);
+
   useEffect(() => {
     const qApps = query(collection(db, 'appointments'));
     const unsubApps = onSnapshot(qApps, (snapshot) => {
@@ -27,8 +29,38 @@ export default function CalculatorScreen() {
       setAppointments(list);
       setLoading(false);
     });
-    return () => unsubApps();
+    
+    const qExp = query(collection(db, 'expenses'));
+    const unsubExp = onSnapshot(qExp, (snapshot) => {
+      const list: any[] = [];
+      snapshot.forEach(docSnap => list.push({ id: docSnap.id, ...docSnap.data() }));
+      setExpenses(list);
+    });
+
+    return () => { unsubApps(); unsubExp(); };
   }, []);
+
+  const handlePay = async (team: string, weekStart: string, amount: string) => {
+    if (!amount || amount === '0.00' || amount === '0') return alert('El importe no puede ser cero.');
+    if (!window.confirm(`¿Confirmas el pago de ${amount}€ a ${team} por esta semana?`)) return;
+
+    try {
+      const { addDoc } = require('firebase/firestore');
+      await addDoc(collection(db, 'expenses'), {
+        amount,
+        category: 'Nómina',
+        description: `Nómina ${team} - Semana ${weekStart}`,
+        date: new Date().toISOString().split('T')[0],
+        type: 'payroll',
+        team,
+        week: weekStart,
+        createdAt: new Date()
+      });
+      alert('Pago registrado con éxito. Aparecerá en los gastos del Dashboard.');
+    } catch (error) {
+      alert('Error al registrar el pago.');
+    }
+  };
 
   const stats = useMemo(() => {
     const targetDate = new Date();
@@ -91,6 +123,8 @@ export default function CalculatorScreen() {
           const pctVal = parseFloat(percentages[team] || '0') || 0;
           const payout = (revenue * (pctVal / 100)).toFixed(2);
 
+          const isPaid = expenses.find(ex => ex.type === 'payroll' && ex.team === team && ex.week === stats.startStr);
+
           return (
             <View key={team} style={styles.card}>
               <View style={styles.cardHeader}>
@@ -106,18 +140,34 @@ export default function CalculatorScreen() {
 
                 <View style={styles.calcColCenter}>
                   <Text style={styles.label}>Comisión %:</Text>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="numeric"
-                    placeholder="Ej: 50"
-                    value={percentages[team] || ''}
-                    onChangeText={(val) => handlePercentageChange(team, val)}
-                  />
+                  {isPaid ? (
+                    <Text style={{fontSize: 16, fontWeight: 'bold', color: '#666', marginTop: 10}}>- Cerrado -</Text>
+                  ) : (
+                    <TextInput
+                      style={styles.input}
+                      keyboardType="numeric"
+                      placeholder="Ej: 50"
+                      value={percentages[team] || ''}
+                      onChangeText={(val) => handlePercentageChange(team, val)}
+                    />
+                  )}
                 </View>
 
                 <View style={styles.calcColRight}>
                   <Text style={styles.label}>A Pagar:</Text>
-                  <Text style={styles.payoutText}>{payout} €</Text>
+                  {isPaid ? (
+                    <View style={{alignItems: 'center'}}>
+                      <Text style={[styles.payoutText, {color: '#888'}]}>{isPaid.amount} €</Text>
+                      <View style={styles.paidBadge}><Text style={styles.paidBadgeText}>✓ Pagado</Text></View>
+                    </View>
+                  ) : (
+                    <View style={{alignItems: 'center'}}>
+                      <Text style={styles.payoutText}>{payout} €</Text>
+                      <TouchableOpacity style={styles.payBtn} onPress={() => handlePay(team, stats.startStr, payout)}>
+                        <Text style={styles.payBtnText}>Marcar Pagado</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
               </View>
             </View>
@@ -163,6 +213,12 @@ const styles = StyleSheet.create({
   input: { backgroundColor: '#f9f9f9', borderWidth: 1, borderColor: '#eee', paddingVertical: 8, paddingHorizontal: 15, borderRadius: 8, width: 80, textAlign: 'center', fontSize: 16, fontWeight: 'bold', color: '#D48A9A' },
   
   payoutText: { fontSize: 22, fontWeight: 'bold', color: '#D48A9A' },
+  
+  payBtn: { backgroundColor: '#2ecc71', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 6, marginTop: 8 },
+  payBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
+  
+  paidBadge: { backgroundColor: '#f0f0f0', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6, marginTop: 8 },
+  paidBadgeText: { color: '#888', fontWeight: 'bold', fontSize: 12 },
 
   noDataText: { color: '#888', fontStyle: 'italic', textAlign: 'center', marginVertical: 10 },
 });
