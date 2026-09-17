@@ -430,6 +430,23 @@ export default function CalendarScreen({ route, navigation }: any) {
     }
   };
 
+  const cancelAppointment = async (id: string) => {
+    if (window.confirm('¿Deseas marcar esta cita como CANCELADA? (Seguirá en el calendario pero en rojo)')) {
+      try {
+        const cancelledAt = new Date().toISOString();
+        await updateDoc(doc(db, 'appointments', id), {
+          status: 'cancelled',
+          cancelledAt: cancelledAt
+        });
+        if (selectedAppointment && selectedAppointment.id === id) {
+          setSelectedAppointment({ ...selectedAppointment, status: 'cancelled', cancelledAt });
+        }
+      } catch (error) {
+        alert('Hubo un error al intentar cancelar la cita.');
+      }
+    }
+  };
+
   const completeService = async (item: Appointment, payStatus: 'paid' | 'pending', payMethod?: 'cash' | 'bizum') => {
     try {
       if (!finalPriceInput.trim()) {
@@ -517,7 +534,7 @@ export default function CalendarScreen({ route, navigation }: any) {
         const today = new Date().toISOString().split('T')[0];
 
         // Colores de punto por estado
-        const STATUS_COLOR: Record<string, string> = { pending: '#f39c12', in_progress: '#D48A9A', completed: '#D48A9A' };
+        const STATUS_COLOR: Record<string, string> = { pending: '#f39c12', in_progress: '#D48A9A', completed: '#D48A9A', cancelled: '#e74c3c' };
 
         const cells: (number | null)[] = [...Array(startOffset).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
         while (cells.length % 7 !== 0) cells.push(null);
@@ -577,8 +594,8 @@ export default function CalendarScreen({ route, navigation }: any) {
             {/* Leyenda */}
             <View style={styles.monthLegend}>
               <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#f39c12' }]} /><Text style={styles.legendText}>Pendiente</Text></View>
-              <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#D48A9A' }]} /><Text style={styles.legendText}>En curso</Text></View>
               <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#D48A9A' }]} /><Text style={styles.legendText}>Completado</Text></View>
+              <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#e74c3c' }]} /><Text style={styles.legendText}>Cancelado</Text></View>
             </View>
 
             {/* Resumen del mes */}
@@ -652,6 +669,7 @@ export default function CalendarScreen({ route, navigation }: any) {
           pending:     { bg: '#fffbeb', border: '#f39c12', text: '#92400e' },
           in_progress: { bg: '#eff6ff', border: '#D48A9A', text: '#1e3a8a' },
           completed:   { bg: '#f0fdf4', border: '#D48A9A', text: '#14532d' },
+          cancelled:   { bg: '#fdf0f0', border: '#e74c3c', text: '#c0392b' },
         };
 
         return (
@@ -876,9 +894,14 @@ export default function CalendarScreen({ route, navigation }: any) {
                 </View>
                 
                 {isAdmin && (
-                  <TouchableOpacity style={styles.deleteApptIconBtn} onPress={() => deleteAppointment(selectedAppointment.id)}>
-                    <Text style={styles.deleteApptIconBtnText}>🗑️</Text>
-                  </TouchableOpacity>
+                  <View style={{flexDirection: 'row', gap: 6}}>
+                    <TouchableOpacity style={[styles.deleteApptIconBtn, {backgroundColor: '#e74c3c', paddingHorizontal: 12, justifyContent: 'center'}]} onPress={() => cancelAppointment(selectedAppointment.id)}>
+                      <Text style={[styles.deleteApptIconBtnText, {fontSize: 12, color: '#fff'}]}>🚫 Cancelar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.deleteApptIconBtn} onPress={() => deleteAppointment(selectedAppointment.id)}>
+                      <Text style={styles.deleteApptIconBtnText}>🗑️</Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
               </View>
             </View>

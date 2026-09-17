@@ -90,10 +90,13 @@ export default function DashboardScreen() {
     }
   };
 
-  const handleMarkAsPaid = async (id: string) => {
+  const handleMarkAsPaid = async (id: string, method: 'cash' | 'bizum' | 'otro') => {
     try {
       const { doc, updateDoc } = require('firebase/firestore');
-      await updateDoc(doc(db, 'appointments', id), { paymentStatus: 'paid' });
+      await updateDoc(doc(db, 'appointments', id), { 
+        paymentStatus: 'paid',
+        paymentMethod: method
+      });
       alert('¡Pago registrado con éxito!');
     } catch (e) {
       alert('Error al actualizar el pago.');
@@ -119,9 +122,16 @@ export default function DashboardScreen() {
     };
 
     const pendingPayments: any[] = [];
+    const cancelledAppointments: any[] = [];
 
     appointments.forEach(app => {
       if (!app.date) return;
+      
+      if (app.status === 'cancelled') {
+        cancelledAppointments.push(app);
+        return; // No se contabiliza en facturación ni clientes atendidos
+      }
+
       const team = app.team || 'Sin asignar';
       
       let price = 0;
@@ -166,7 +176,7 @@ export default function DashboardScreen() {
       }
     });
 
-    return { ...data, pendingPayments };
+    return { ...data, pendingPayments, cancelledAppointments };
   }, [appointments]);
 
   if (loading) {
@@ -231,16 +241,68 @@ export default function DashboardScreen() {
                 </View>
                 <Text style={[styles.summaryValue, {fontSize: 18, color: '#f39c12'}]}>{app.finalPrice} €</Text>
               </View>
-              <TouchableOpacity 
-                style={[styles.btnAction, {backgroundColor: '#4a9b40', alignSelf: 'flex-end', paddingVertical: 8, marginTop: 10}]}
-                onPress={() => handleMarkAsPaid(app.id)}
-              >
-                <Text style={styles.btnText}>✅ Marcar como Pagado</Text>
-              </TouchableOpacity>
+              <View style={{flexDirection: 'row', gap: 6, alignSelf: 'flex-end', marginTop: 10, flexWrap: 'wrap', justifyContent: 'flex-end'}}>
+                <TouchableOpacity 
+                  style={[styles.btnAction, {backgroundColor: '#4a9b40', paddingVertical: 8}]}
+                  onPress={() => handleMarkAsPaid(app.id, 'cash')}
+                >
+                  <Text style={styles.btnText}>💵 Efectivo</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.btnAction, {backgroundColor: '#00a4bd', paddingVertical: 8}]}
+                  onPress={() => handleMarkAsPaid(app.id, 'bizum')}
+                >
+                  <Text style={styles.btnText}>📱 Bizum</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.btnAction, {backgroundColor: '#9b59b6', paddingVertical: 8}]}
+                  onPress={() => handleMarkAsPaid(app.id, 'otro')}
+                >
+                  <Text style={styles.btnText}>💳 Otro</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           ))
         ) : (
           <Text style={styles.noDataText}>No hay pagos pendientes de cobro.</Text>
+        )}
+      </View>
+
+      {/* TARJETA DE CITAS CANCELADAS */}
+      <View style={styles.card}>
+        <Text style={[styles.cardTitle, {color: '#e74c3c'}]}>🚫 Registro de Citas Canceladas</Text>
+        {stats.cancelledAppointments.length > 0 ? (
+          stats.cancelledAppointments.map((app: any) => {
+            let noticeText = 'Desconocido';
+            if (app.cancelledAt) {
+              const scheduledDate = new Date(`${app.date}T${app.time || '00:00'}:00`);
+              const cancelledDate = new Date(app.cancelledAt);
+              const diffMs = scheduledDate.getTime() - cancelledDate.getTime();
+              
+              if (diffMs < 0) {
+                noticeText = `Cancelada ${Math.round(Math.abs(diffMs) / (1000 * 60 * 60))}h después (No-show)`;
+              } else {
+                const diffHours = diffMs / (1000 * 60 * 60);
+                if (diffHours < 24) {
+                  noticeText = `Cancelada con ${Math.round(diffHours)}h de antelación`;
+                } else {
+                  noticeText = `Cancelada con ${Math.round(diffHours / 24)} días de antelación`;
+                }
+              }
+            }
+
+            return (
+              <View key={app.id} style={[styles.teamRow, {flexDirection: 'column', alignItems: 'flex-start'}]}>
+                <Text style={styles.teamName}>👤 {app.client}</Text>
+                <Text style={styles.teamStats}>📅 {app.date} a las {app.time} - ✨ {app.serviceName}</Text>
+                <Text style={[styles.teamStats, {color: '#e74c3c', fontWeight: 'bold', marginTop: 2}]}>
+                  ⏰ {noticeText}
+                </Text>
+              </View>
+            );
+          })
+        ) : (
+          <Text style={styles.noDataText}>No hay citas canceladas registradas.</Text>
         )}
       </View>
 
