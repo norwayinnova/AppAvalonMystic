@@ -89,7 +89,15 @@ export default function AppointmentsScreen({ route, navigation }: any) {
         const qClient = query(collection(db, 'clients'), where('phone', '==', cleanPhone));
         const snap = await getDocs(qClient);
         if (!snap.empty) {
-          const clientFound = { id: snap.docs[0].id, ...snap.docs[0].data() };
+          const clientFound: any = { id: snap.docs[0].id, ...snap.docs[0].data() };
+          
+          // Buscar historial de citas canceladas para ver si es problemático
+          const qApps = query(collection(db, 'appointments'), where('phone', '==', cleanPhone), where('status', '==', 'cancelled'));
+          const snapApps = await getDocs(qApps);
+          if (snapApps.docs.length >= 2) {
+            clientFound.isProblematic = true;
+          }
+
           setExistingClientData(clientFound);
         } else {
           setExistingClientData(null);
@@ -319,6 +327,11 @@ export default function AppointmentsScreen({ route, navigation }: any) {
             <Text style={styles.existingClientText}>
               ⭐ ¡Cliente habitual encontrado! ({existingClientData.name})
             </Text>
+            {existingClientData.isProblematic && (
+              <Text style={{color: '#c0392b', fontWeight: 'bold', fontSize: 13, marginTop: 4, marginBottom: 8}}>
+                ⚠️ ATENCIÓN: Esta clienta ha cancelado o no ha acudido a 2 o más citas. Se recomienda solicitar Pago de Reserva.
+              </Text>
+            )}
             <TouchableOpacity style={styles.autofillBtn} onPress={autofillClient}>
               <Text style={styles.autofillBtnText}>⚡ Autocompletar datos del cliente</Text>
             </TouchableOpacity>

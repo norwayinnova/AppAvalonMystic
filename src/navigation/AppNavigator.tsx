@@ -1,5 +1,5 @@
-import React from 'react';
-import { Image, View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect } from 'react';
+import { Image, View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native';
 import RoleSelectionScreen from '../screens/RoleSelectionScreen';
 import { useAppContext } from '../context/AppContext';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
@@ -13,6 +13,7 @@ import ClientsScreen from '../screens/ClientsScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import ExpensesScreen from '../screens/ExpensesScreen';
 import InventoryScreen from '../screens/InventoryScreen';
+import ClientBookingScreen from '../screens/ClientBookingScreen';
 
 const Tab = createMaterialTopTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -112,7 +113,16 @@ function TopTabs() {
 }
 
 export default function AppNavigator() {
-  const { role, logout } = useAppContext();
+  const { role, logout, loginAsClient } = useAppContext();
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const url = window.location.href;
+      if (url.includes('?reserva') || url.includes('/reserva')) {
+        loginAsClient();
+      }
+    }
+  }, []);
 
   return (
     <NavigationContainer>
@@ -134,6 +144,8 @@ export default function AppNavigator() {
       >
         {!role ? (
           <Stack.Screen name="Login" component={RoleSelectionScreen} options={{ headerShown: false }} />
+        ) : role === 'cliente' ? (
+          <Stack.Screen name="ClientBooking" component={ClientBookingScreen} options={{ title: 'Reserva Online' }} />
         ) : (
           <Stack.Screen name="Main" component={TopTabs} />
         )}

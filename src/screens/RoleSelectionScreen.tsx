@@ -5,7 +5,7 @@ import { db } from '../config/firebase';
 import { useAppContext } from '../context/AppContext';
 
 export default function RoleSelectionScreen() {
-  const { loginAsAdmin, loginAsManagement, loginAsTeam } = useAppContext();
+  const { loginAsAdmin, loginAsManagement, loginAsTeam, loginAsClient } = useAppContext();
   const [teams, setTeams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -13,6 +13,7 @@ export default function RoleSelectionScreen() {
   const [pin, setPin] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [adminConfig, setAdminConfig] = useState({ pinEnabled: true, pin: '1234' });
+  const [loginTarget, setLoginTarget] = useState<any>(null); // { type: 'admin' } | { type: 'team', team: obj } | { type: 'management' }
 
   useEffect(() => {
     const q = query(collection(db, 'teams'), orderBy('name'));
@@ -28,17 +29,40 @@ export default function RoleSelectionScreen() {
     return () => { unsubTeams(); unsubConfig(); };
   }, []);
 
-  const handleAdminPress = () => {
-    if (adminConfig.pinEnabled) setShowPinInput(true);
-    else loginAsAdmin();
+  const initiateLogin = (target: any) => {
+    setLoginTarget(target);
+    setShowPinInput(true);
+    setPin('');
+    setErrorMsg('');
   };
 
-  const handleAdminSubmit = () => {
-    if (pin === adminConfig.pin) {
-      loginAsAdmin();
-    } else {
-      setErrorMsg('PIN incorrecto. Inténtalo de nuevo.');
-      setPin('');
+  const handleSubmitPin = () => {
+    if (!loginTarget) return;
+
+    if (loginTarget.type === 'admin') {
+      if (!adminConfig.pinEnabled || pin === adminConfig.pin) {
+        loginAsAdmin();
+      } else {
+        setErrorMsg('PIN incorrecto. Inténtalo de nuevo.');
+        setPin('');
+      }
+    } else if (loginTarget.type === 'management') {
+      // Management uses admin PIN or maybe no PIN? The plan said lock all internal profiles.
+      // Let's just use admin pin for management for now, or '1234'.
+      if (pin === (adminConfig.pin || '1234')) {
+        loginAsManagement();
+      } else {
+        setErrorMsg('PIN incorrecto.');
+        setPin('');
+      }
+    } else if (loginTarget.type === 'team') {
+      const teamPin = loginTarget.team.pin || '1234';
+      if (pin === teamPin) {
+        loginAsTeam(loginTarget.team.name);
+      } else {
+        setErrorMsg('PIN incorrecto.');
+        setPin('');
+      }
     }
   };
 
@@ -64,7 +88,7 @@ export default function RoleSelectionScreen() {
         <View style={styles.card}>
           {showPinInput ? (
             <View style={styles.pinSection}>
-              <Text style={styles.pinTitle}>🔐 Zona Administrador</Text>
+              <Text style={styles.pinTitle}>🔐 {loginTarget?.type === 'admin' ? 'Zona Administrador' : loginTarget?.type === 'team' ? `Perfil de ${loginTarget?.team?.name}` : 'Acceso de Gestión'}</Text>
               <Text style={styles.pinSubtitle}>Introduce tu PIN de acceso</Text>
               {renderPinDots()}
               <TextInput
@@ -81,7 +105,7 @@ export default function RoleSelectionScreen() {
                   <Text style={styles.errorText}>❌ {errorMsg}</Text>
                 </View>
               ) : null}
-              <TouchableOpacity style={styles.primaryBtn} onPress={handleAdminSubmit}>
+              <TouchableOpacity style={styles.primaryBtn} onPress={handleSubmitPin}>
                 <Text style={styles.primaryBtnText}>Entrar →</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.ghostBtn} onPress={() => { setShowPinInput(false); setPin(''); setErrorMsg(''); }}>
@@ -92,8 +116,26 @@ export default function RoleSelectionScreen() {
             <View>
               <Text style={styles.cardTitle}>¿Quién eres?</Text>
 
+              {/* Cliente */}
+              <TouchableOpacity style={styles.clientBtn} onPress={loginAsClient}>
+                <View style={styles.btnInner}>
+                  <Text style={styles.btnEmoji}>📅</Text>
+                  <View>
+                    <Text style={[styles.adminBtnTitle, {color: '#fff'}]}>Soy Cliente</Text>
+                    <Text style={[styles.adminBtnSub, {color: '#eee'}]}>Reservar cita online</Text>
+                  </View>
+                </View>
+                <Text style={[styles.chevron, {color: '#fff'}]}>›</Text>
+              </TouchableOpacity>
+
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>Acceso Personal</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
               {/* Admin */}
-              <TouchableOpacity style={styles.adminBtn} onPress={handleAdminPress}>
+              <TouchableOpacity style={styles.adminBtn} onPress={() => initiateLogin({ type: 'admin' })}>
                 <View style={styles.btnInner}>
                   <Text style={styles.btnEmoji}>👑</Text>
                   <View>
@@ -105,7 +147,7 @@ export default function RoleSelectionScreen() {
               </TouchableOpacity>
 
               {/* Gestión */}
-              <TouchableOpacity style={styles.mgmtBtn} onPress={loginAsManagement}>
+              <TouchableOpacity style={styles.mgmtBtn} onPress={() => initiateLogin({ type: 'management' })}>
                 <View style={styles.btnInner}>
                   <Text style={styles.btnEmoji}>📋</Text>
                   <View>
@@ -129,7 +171,7 @@ export default function RoleSelectionScreen() {
                   <TouchableOpacity
                     key={t.id}
                     style={[styles.teamBtn, { borderLeftColor: TEAM_COLORS[i % TEAM_COLORS.length] }]}
-                    onPress={() => loginAsTeam(t.name)}
+                    onPress={() => initiateLogin({ type: 'team', team: t })}
                   >
                     <View style={styles.btnInner}>
                       <Text style={styles.btnEmoji}>🚐</Text>
@@ -170,6 +212,7 @@ const styles = StyleSheet.create({
   adminBtn: { backgroundColor: 'rgba(217,83,79,0.15)', borderWidth: 1.5, borderColor: '#d9534f', borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   adminBtnTitle: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   adminBtnSub: { color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 2 },
+  clientBtn: { backgroundColor: '#7A4B56', borderWidth: 1.5, borderColor: '#D48A9A', borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
   teamBtn: { backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderLeftWidth: 4, borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
   teamBtnTitle: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
   teamBtnSub: { color: 'rgba(255,255,255,0.45)', fontSize: 12, marginTop: 2 },

@@ -74,7 +74,7 @@ export default function DashboardScreen() {
     if (!newTeamName.trim()) return;
     try {
       const { addDoc } = require('firebase/firestore');
-      await addDoc(collection(db, 'teams'), { name: newTeamName.trim(), members: '' });
+      await addDoc(collection(db, 'teams'), { name: newTeamName.trim(), members: '', pin: '1234' });
       setNewTeamName('');
     } catch (e) {
       alert('Error al añadir empleada.');
@@ -100,6 +100,54 @@ export default function DashboardScreen() {
       alert('¡Pago registrado con éxito!');
     } catch (e) {
       alert('Error al actualizar el pago.');
+    }
+  };
+
+  const handleFreeUpSpace = async () => {
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const thresholdDate = threeMonthsAgo.toISOString().split('T')[0];
+
+    if (!window.confirm(`¿Estás seguro de que quieres eliminar todas las citas anteriores al ${thresholdDate}?`)) return;
+
+    try {
+        const { getDocs, query, where, writeBatch, doc, getDoc, setDoc } = require('firebase/firestore');
+        const q = query(collection(db, 'appointments'), where('date', '<', thresholdDate));
+        const snap = await getDocs(q);
+        
+        if (snap.empty) {
+            alert('No hay citas tan antiguas para eliminar.');
+            return;
+        }
+
+        let totalRevenueArchived = 0;
+        let count = 0;
+
+        const batch = writeBatch(db);
+        snap.forEach((d: any) => {
+            const data = d.data();
+            if (data.status === 'completed' && data.paymentStatus === 'paid') {
+                totalRevenueArchived += parseFloat(data.finalPrice) || 0;
+            }
+            batch.delete(d.ref);
+            count++;
+        });
+
+        if (totalRevenueArchived > 0) {
+            const historyRef = doc(db, 'config', 'historical_revenue');
+            const historyDoc = await getDoc(historyRef);
+            const currentTotal = historyDoc.exists() ? (historyDoc.data().total || 0) : 0;
+            await setDoc(historyRef, {
+                total: currentTotal + totalRevenueArchived,
+                lastCleanup: new Date().toISOString()
+            }, { merge: true });
+        }
+
+        await batch.commit();
+        alert(`¡Espacio liberado! Se han borrado ${count} citas antiguas.\nSe ha archivado una facturación de ${totalRevenueArchived.toFixed(2)} € para el registro histórico.`);
+    } catch(e) {
+        alert('Error al liberar espacio.');
+        console.error(e);
     }
   };
 
@@ -306,6 +354,21 @@ export default function DashboardScreen() {
         )}
       </View>
 
+      {/* TARJETA DE LIMPIEZA DE BASE DE DATOS */}
+      <View style={styles.card}>
+        <Text style={[styles.cardTitle, {color: '#8e44ad'}]}>🧹 Mantenimiento de Base de Datos</Text>
+        <Text style={{color: '#555', fontSize: 13, marginBottom: 15}}>
+          Borra citas con más de 3 meses de antigüedad para liberar espacio y acelerar la aplicación. 
+          Los ingresos generados por esas citas se archivarán en un registro histórico para que no los pierdas.
+        </Text>
+        <TouchableOpacity 
+          style={[styles.btnAction, {backgroundColor: '#8e44ad', alignSelf: 'flex-start', paddingHorizontal: 20}]}
+          onPress={handleFreeUpSpace}
+        >
+          <Text style={styles.btnText}>🗑️ Liberar espacio (Citas &gt; 3 meses)</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* TARJETA DE ADMINISTRACIÓN */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>⚙️ Configuración y Empleadas</Text>
@@ -345,11 +408,37 @@ export default function DashboardScreen() {
           <View style={{marginTop: 15}}>
             <Text style={styles.subtitle}>Perfiles de Acceso Actuales:</Text>
             {teams.map(t => (
-              <View key={t.id} style={styles.teamRow}>
-                <Text style={styles.teamName}>💇‍♀️ {t.name}</Text>
-                <TouchableOpacity onPress={() => handleDeleteTeam(t.id)} style={styles.delBtn}>
-                  <Text style={styles.delBtnText}>🗑️ Eliminar</Text>
-                </TouchableOpacity>
+              <View key={t.id} style={[styles.teamRow, {flexDirection: 'column', alignItems: 'stretch'}]}>
+                <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10}}>
+                  <Text style={styles.teamName}>💇‍♀️ {t.name} (PIN: {t.pin || '1234'})</Text>
+                  <TouchableOpacity onPress={() => handleDeleteTeam(t.id)} style={styles.delBtn}>
+                    <Text style={styles.delBtnText}>🗑️ Eliminar</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <TextInput
+                    style={[styles.input, {flex: 1, marginRight: 10, paddingVertical: 8, marginBottom: 0}]}
+                    placeholder="Nuevo PIN (4 dígitos)"
+                    keyboardType="numeric"
+                    maxLength={4}
+                    onChangeText={(text) => t.newPin = text}
+                  />
+                  <TouchableOpacity 
+                    style={[styles.btnAction, {paddingVertical: 12, paddingHorizontal: 15}]} 
+                    onPress={async () => {
+                      if (!t.newPin || t.newPin.length !== 4) return alert('El PIN debe tener 4 dígitos.');
+                      try {
+                        const { doc, updateDoc } = require('firebase/firestore');
+                        await updateDoc(doc(db, 'teams', t.id), { pin: t.newPin });
+                        alert(`PIN de ${t.name} actualizado.`);
+                      } catch(e) {
+                        alert('Error al actualizar PIN.');
+                      }
+                    }}
+                  >
+                    <Text style={[styles.btnText, {fontSize: 14}]}>Cambiar PIN</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
           </View>

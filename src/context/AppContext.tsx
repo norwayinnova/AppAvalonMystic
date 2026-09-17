@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
-type Role = 'admin' | 'management' | 'team' | null;
+type Role = 'admin' | 'management' | 'team' | 'cliente' | null;
 
 interface AppContextType {
   role: Role;
@@ -8,6 +8,7 @@ interface AppContextType {
   loginAsAdmin: () => void;
   loginAsManagement: () => void;
   loginAsTeam: (teamName: string) => void;
+  loginAsClient: () => void;
   logout: () => void;
 }
 
@@ -20,10 +21,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const loginAsAdmin = () => { setRole('admin'); setTeamName(null); };
   const loginAsManagement = () => { setRole('management'); setTeamName(null); };
   const loginAsTeam = (name: string) => { setRole('team'); setTeamName(name); };
+  const loginAsClient = () => { setRole('cliente'); setTeamName(null); };
   const logout = () => { setRole(null); setTeamName(null); };
 
   return (
-    <AppContext.Provider value={{ role, teamName, loginAsAdmin, loginAsManagement, loginAsTeam, logout }}>
+    <AppContext.Provider value={{ role, teamName, loginAsAdmin, loginAsManagement, loginAsTeam, loginAsClient, logout }}>
       {children}
     </AppContext.Provider>
   );

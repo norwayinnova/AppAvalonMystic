@@ -501,9 +501,25 @@ export default function CalendarScreen({ route, navigation }: any) {
               <Text style={styles.optimizerBtnText}>🪄 Optimizar</Text>
             </TouchableOpacity>
           )}
-          {isAdmin && (
+          {isAdmin ? (
             <TouchableOpacity style={styles.manageTeamsBtn} onPress={() => setShowTeamsModal(true)}>
               <Text style={styles.manageTeamsText}>👥 Equipos ({teams.length})</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={[styles.manageTeamsBtn, {backgroundColor: '#f5f7fa', borderColor: '#e0e8f0'}]} onPress={() => {
+              const newPin = window.prompt("Introduce tu nuevo PIN personal (4 dígitos):");
+              if (newPin && newPin.length === 4) {
+                 const t = teams.find(t => t.name === teamName);
+                 if (t) {
+                   require('firebase/firestore').updateDoc(require('firebase/firestore').doc(db, 'teams', t.id), { pin: newPin })
+                     .then(() => alert('Tu PIN ha sido actualizado con éxito.'))
+                     .catch(() => alert('Hubo un error al actualizar tu PIN.'));
+                 }
+              } else if (newPin) {
+                 alert('El PIN debe tener exactamente 4 dígitos numéricos.');
+              }
+            }}>
+              <Text style={[styles.manageTeamsText, {color: '#555'}]}>🔐 Mi PIN</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity style={styles.newApptBtn} onPress={() => navigation.navigate('Appointments')}>

@@ -125,6 +125,9 @@ export default function ClientsScreen({ navigation }: any) {
               const p = parseFloat(app.price || '0');
               return isNaN(p) ? sum : sum + p;
             }, 0);
+            
+            const cancelledCount = clientHistory.filter(a => a.status === 'cancelled').length;
+            const isProblematic = cancelledCount >= 2;
 
             const isExpanded = expandedClientId === item.id;
 
@@ -134,6 +137,11 @@ export default function ClientsScreen({ navigation }: any) {
                   <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
                     <View>
                       <Text style={styles.clientName}>👤 {item.name}</Text>
+                      {isProblematic && (
+                        <Text style={{color: '#c0392b', fontWeight: 'bold', fontSize: 12, marginTop: 2}}>
+                          ⚠️ Clienta Problemática ({cancelledCount} cancelaciones)
+                        </Text>
+                      )}
                       {item.phone ? (
                         <TouchableOpacity style={styles.phoneRow} onPress={() => callClient(item.phone)}>
                           <Text style={styles.phoneText}>📞 {item.phone}</Text>
