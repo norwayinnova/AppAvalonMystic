@@ -549,8 +549,8 @@ export default function AppointmentsScreen({ route, navigation }: any) {
 
       <View style={styles.buttonRow}>
         <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.navigate('Calendar')}><Text style={styles.cancelButtonText}>Cancelar</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.saveButton} onPress={saveAppointment} disabled={saving}>
-          {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Guardar Cita</Text>}
+        <TouchableOpacity style={styles.saveButton} onPress={saveAppointment}>
+          <Text style={styles.saveButtonText}>Guardar Cita</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
