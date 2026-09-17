@@ -88,7 +88,7 @@ export default function RoleSelectionScreen() {
         <View style={styles.card}>
           {showPinInput ? (
             <View style={styles.pinSection}>
-              <Text style={styles.pinTitle}>🔐 {loginTarget?.type === 'admin' ? 'Zona Administrador' : loginTarget?.type === 'team' ? `Perfil de ${loginTarget?.team?.name}` : 'Acceso de Gestión'}</Text>
+              <Text style={styles.pinTitle}>🔐 {loginTarget?.type === 'admin' ? 'Zona Administrador' : loginTarget?.type === 'team' ? `Perfil de ${loginTarget?.team?.name}` : 'Acceso AvalonMystic'}</Text>
               <Text style={styles.pinSubtitle}>Introduce tu PIN de acceso</Text>
               {renderPinDots()}
               <TextInput
@@ -146,47 +146,17 @@ export default function RoleSelectionScreen() {
                 <Text style={styles.chevron}>›</Text>
               </TouchableOpacity>
 
-              {/* Gestión */}
+              {/* AvalonMystic (antes Gestión) */}
               <TouchableOpacity style={styles.mgmtBtn} onPress={() => initiateLogin({ type: 'management' })}>
                 <View style={styles.btnInner}>
                   <Text style={styles.btnEmoji}>📋</Text>
                   <View>
-                    <Text style={styles.mgmtBtnTitle}>Gestión</Text>
-                    <Text style={styles.mgmtBtnSub}>Clientes, calendario y operativa</Text>
+                    <Text style={styles.mgmtBtnTitle}>AvalonMystic</Text>
+                    <Text style={styles.mgmtBtnSub}>Calendario y operativa</Text>
                   </View>
                 </View>
                 <Text style={styles.chevron}>›</Text>
               </TouchableOpacity>
-
-              <View style={styles.dividerRow}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>o accede como equipo</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              {loading ? (
-                <ActivityIndicator color="#D48A9A" size="large" style={{ marginTop: 20 }} />
-              ) : (
-                teams.map((t, i) => (
-                  <TouchableOpacity
-                    key={t.id}
-                    style={[styles.teamBtn, { borderLeftColor: TEAM_COLORS[i % TEAM_COLORS.length] }]}
-                    onPress={() => initiateLogin({ type: 'team', team: t })}
-                  >
-                    <View style={styles.btnInner}>
-                      <Text style={styles.btnEmoji}>🚐</Text>
-                      <View>
-                        <Text style={styles.teamBtnTitle}>{t.name}</Text>
-                        <Text style={styles.teamBtnSub}>{t.members || 'Equipo de trabajo'}</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.chevron}>›</Text>
-                  </TouchableOpacity>
-                ))
-              )}
-              {!loading && teams.length === 0 && (
-                <Text style={styles.emptyText}>No hay equipos creados aún.</Text>
-              )}
             </View>
           )}
         </View>
