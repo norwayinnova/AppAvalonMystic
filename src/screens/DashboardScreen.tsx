@@ -179,7 +179,7 @@ export default function DashboardScreen() {
     endOfWeek.setDate(endOfWeek.getDate() + 6);
     const endOfWeekStr = endOfWeek.toISOString().split('T')[0];
 
-    const createTeamRecord = () => ({ clients: 0, revenue: 0, pending: 0, cancelled: 0 });
+    const createTeamRecord = () => ({ clients: 0, revenue: 0, pending: 0, cancelled: 0, workedMins: 0, blockedMins: 0 });
 
     const data = {
       week: { clients: 0, revenue: 0, expenses: 0, cash: 0, bizum: 0, otro: 0, pending: 0, byTeam: {} as Record<string, ReturnType<typeof createTeamRecord>> },
@@ -198,10 +198,15 @@ export default function DashboardScreen() {
       let price = 0;
       let pendingVal = 0;
       let method = '';
+      let isBloqueo = false;
+      let durationMins = parseInt(app.duration || '0');
 
       if (isCancelled) {
         cancelledAppointments.push(app);
       } else {
+        isBloqueo = (app.serviceName && app.serviceName.toLowerCase().includes('bloquead')) || 
+                    (app.client && app.client.toLowerCase().includes('bloquead'));
+
         if (app.status === 'completed' && app.paymentStatus === 'paid' && app.finalPrice) {
           price = parseFloat(app.finalPrice) || 0;
           method = app.paymentMethod || 'otro';
@@ -222,18 +227,24 @@ export default function DashboardScreen() {
         if (isCancelled) {
           data[period].byTeam[team].cancelled += 1;
         } else {
-          data[period].clients += 1;
-          data[period].byTeam[team].clients += 1;
-          
-          data[period].revenue += price;
-          data[period].byTeam[team].revenue += price;
+          if (isBloqueo) {
+            data[period].byTeam[team].blockedMins += durationMins;
+          } else {
+            // Count as a normal client/service
+            data[period].clients += 1;
+            data[period].byTeam[team].clients += 1;
+            data[period].byTeam[team].workedMins += durationMins;
+            
+            data[period].revenue += price;
+            data[period].byTeam[team].revenue += price;
 
-          data[period].pending += pendingVal;
-          data[period].byTeam[team].pending += pendingVal;
-          
-          if (method === 'cash') data[period].cash += price;
-          else if (method === 'bizum') data[period].bizum += price;
-          else if (method) data[period].otro += price;
+            data[period].pending += pendingVal;
+            data[period].byTeam[team].pending += pendingVal;
+            
+            if (method === 'cash') data[period].cash += price;
+            else if (method === 'bizum') data[period].bizum += price;
+            else if (method) data[period].otro += price;
+          }
         }
       };
 
@@ -302,11 +313,24 @@ export default function DashboardScreen() {
         <Text style={styles.subtitle}>Desglose por Empleada/Equipo:</Text>
         {activeTeams.map(team => {
           const tData = periodData.byTeam[team];
+          
+          const formatHours = (mins: number) => {
+            if (!mins) return '0h';
+            const h = Math.floor(mins / 60);
+            const m = mins % 60;
+            if (h > 0 && m > 0) return `${h}h ${m}m`;
+            if (h > 0) return `${h}h`;
+            return `${m}m`;
+          };
+
           return (
             <View key={team} style={[styles.teamRow, {flexDirection: 'column', alignItems: 'flex-start'}]}>
               <Text style={[styles.teamName, {marginBottom: 4}]}>{team}</Text>
               <Text style={styles.teamStats}>✅ {tData.clients} citas | ❌ {tData.cancelled} canceladas</Text>
               <Text style={styles.teamStats}>💵 Ingresos: {tData.revenue.toFixed(2)} € | ⏳ Pendiente: {tData.pending.toFixed(2)} €</Text>
+              <Text style={[styles.teamStats, {color: '#888', marginTop: 2, fontSize: 12}]}>
+                ⏱ Trabajado: {formatHours(tData.workedMins)} | ⏸️ Bloqueado: {formatHours(tData.blockedMins)}
+              </Text>
             </View>
           );
         })}

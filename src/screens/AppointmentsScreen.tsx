@@ -24,6 +24,8 @@ export default function AppointmentsScreen({ route, navigation }: any) {
 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState('');
+  const [isFullDayBlock, setIsFullDayBlock] = useState(false);
+  const [customDuration, setCustomDuration] = useState('');
   
   // Dirección y validación optimizada
   const [addressInput, setAddressInput] = useState('');
@@ -205,7 +207,13 @@ export default function AppointmentsScreen({ route, navigation }: any) {
 
     const getMinutes = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
     const newStart = getMinutes(testTime);
-    const newEnd = newStart + parseInt(selectedService.duration);
+    
+    let durationToUse = selectedService.duration;
+    if (selectedService.name.toLowerCase().includes('bloquead') && customDuration) {
+      durationToUse = customDuration;
+    }
+    
+    const newEnd = newStart + parseInt(durationToUse || '60');
     for (const app of teamApps) {
       const existingStart = getMinutes(app.time);
       const existingEnd = existingStart + parseInt(app.duration);
@@ -227,17 +235,29 @@ export default function AppointmentsScreen({ route, navigation }: any) {
 
 
   const saveAppointment = async () => {
-    if (!client.trim() || !date || !time || !selectedService) {
+    if (!client.trim() || !date || (!time && !isFullDayBlock) || (!selectedService && !isFullDayBlock)) {
       alert("Por favor, rellena los campos obligatorios (cliente, servicio, fecha y hora).");
       return;
     }
 
     const finalAddress = '';
+    
+    const finalTime = isFullDayBlock ? '09:00' : time;
+    
+    let durationToUse = selectedService?.duration || '60';
+    if (selectedService?.name?.toLowerCase().includes('bloquead') && customDuration) {
+      durationToUse = customDuration;
+    }
+    const finalDuration = isFullDayBlock ? '660' : durationToUse;
+    
+    const finalServiceName = isFullDayBlock ? 'Bloqueo Completo' : selectedService?.name || 'Bloqueo';
 
-    const status = checkSlotStatus(time);
-    if (status.conflict) {
-      alert(status.reason);
-      return;
+    if (!isFullDayBlock) {
+      const status = checkSlotStatus(finalTime);
+      if (status.conflict) {
+        alert(status.reason);
+        return;
+      }
     }
 
     try {
@@ -250,13 +270,13 @@ export default function AppointmentsScreen({ route, navigation }: any) {
         client: cleanClient,
         phone: cleanPhone,
         date,
-        time,
+        time: finalTime,
         address: finalAddress,
         detailedInfo: detailedInfo.trim(),
         price: price.trim() || '',
         team: finalTeam,
-        serviceName: selectedService.name,
-        duration: selectedService.duration,
+        serviceName: finalServiceName,
+        duration: finalDuration,
         createdAt: new Date()
       });
 
@@ -293,6 +313,8 @@ export default function AppointmentsScreen({ route, navigation }: any) {
       setPhone('');
       setExistingClientData(null);
       setTime('');
+      setIsFullDayBlock(false);
+      setCustomDuration('');
       setAddressInput('');
       setValidatedAddress(null);
       setDetailedInfo('');
@@ -356,6 +378,16 @@ export default function AppointmentsScreen({ route, navigation }: any) {
           value={client}
           onChangeText={setClient}
         />
+        {client.toLowerCase().includes('bloquead') && (
+          <TouchableOpacity 
+            style={[styles.chipBtn, isFullDayBlock ? styles.chipSelected : {marginTop: 10}]} 
+            onPress={() => setIsFullDayBlock(!isFullDayBlock)}
+          >
+            <Text style={isFullDayBlock ? styles.textSelected : styles.textUnselected}>
+              {isFullDayBlock ? '☑️ Bloquear todo el día' : '☐ Bloquear todo el día'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
       
 
@@ -374,6 +406,19 @@ export default function AppointmentsScreen({ route, navigation }: any) {
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+      {selectedService?.name?.toLowerCase().includes('bloquead') && !isFullDayBlock && (
+        <View style={{ marginBottom: 12 }}>
+          <Text style={styles.inputLabel}>Duración del bloqueo (en minutos):</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ej: 90"
+            keyboardType="numeric"
+            value={customDuration}
+            onChangeText={setCustomDuration}
+          />
+        </View>
+      )}
 
 
 
