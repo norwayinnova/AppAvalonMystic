@@ -34,11 +34,11 @@ interface Appointment {
   team?: string;
   reminderSent?: boolean;
   photos?: string[];
-  status?: 'pending' | 'in_progress' | 'completed';
-  startedAt?: string;
+  status?: 'pending' | 'completed';
   completedAt?: string;
-  delayMinutes?: number;
   reviewRequested?: boolean;
+  paymentStatus?: 'paid' | 'pending';
+  finalPrice?: string;
 }
 
 interface Team {
@@ -71,7 +71,7 @@ export default function CalendarScreen({ route, navigation }: any) {
   const [tomorrowDateStr, setTomorrowDateStr] = useState<string>('');
   const [uploadingPhotos, setUploadingPhotos] = useState<Record<string, boolean>>({});
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  
+  const [finalPriceInput, setFinalPriceInput] = useState<string>('');
   // Modal de gestión de equipos
   const [showTeamsModal, setShowTeamsModal] = useState(false);
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
@@ -463,47 +463,23 @@ export default function CalendarScreen({ route, navigation }: any) {
     }
   };
 
-  const startService = async (item: Appointment) => {
+  const completeService = async (item: Appointment, payStatus: 'paid' | 'pending') => {
     try {
-      const now = new Date();
-      let delayMins = 0;
-      const todayStr = now.toISOString().split('T')[0];
-      
-      // Calcular retraso solo si el servicio es en el día actual
-      if (item.date === todayStr) {
-         const [schedH, schedM] = item.time.split(':').map(Number);
-         const scheduledMins = schedH * 60 + schedM;
-         const currentMins = now.getHours() * 60 + now.getMinutes();
-         if (currentMins > scheduledMins) {
-            delayMins = currentMins - scheduledMins;
-         }
+      if (!finalPriceInput.trim()) {
+        alert('Por favor, indica el importe final cobrado o a deber.');
+        return;
       }
-
-      await updateDoc(doc(db, 'appointments', item.id), {
-         status: 'in_progress',
-         startedAt: now.toISOString(),
-         delayMinutes: delayMins
-      });
-      
-      // Refrescar el modal si es el que está abierto
-      if (selectedAppointment && selectedAppointment.id === item.id) {
-         setSelectedAppointment({ ...selectedAppointment, status: 'in_progress', startedAt: now.toISOString(), delayMinutes: delayMins });
-      }
-    } catch (e) {
-      alert('Error al iniciar el servicio.');
-    }
-  };
-
-  const completeService = async (item: Appointment) => {
-    try {
       const nowStr = new Date().toISOString();
       await updateDoc(doc(db, 'appointments', item.id), {
          status: 'completed',
-         completedAt: nowStr
+         completedAt: nowStr,
+         paymentStatus: payStatus,
+         finalPrice: finalPriceInput
       });
       if (selectedAppointment && selectedAppointment.id === item.id) {
-         setSelectedAppointment({ ...selectedAppointment, status: 'completed', completedAt: nowStr });
+         setSelectedAppointment({ ...selectedAppointment, status: 'completed', completedAt: nowStr, paymentStatus: payStatus, finalPrice: finalPriceInput });
       }
+      alert(payStatus === 'paid' ? '¡Servicio cobrado correctamente!' : 'Servicio guardado como Pago Pendiente.');
     } catch (e) {
       alert('Error al completar el servicio.');
     }
@@ -1183,6 +1159,37 @@ export default function CalendarScreen({ route, navigation }: any) {
                 ) : null}
               </ScrollView>
 
+              {/* SECCIÓN DE COBRO Y FINALIZACIÓN */}
+              <View style={styles.paymentSection}>
+                {selectedAppointment.status === 'completed' ? (
+                  <View style={styles.completedBadge}>
+                    <Text style={styles.completedBadgeText}>
+                      ✓ Finalizado ({selectedAppointment.paymentStatus === 'paid' ? 'Cobrado' : 'Pago Pendiente'})
+                      {selectedAppointment.finalPrice ? ` - ${selectedAppointment.finalPrice}€` : ''}
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    <Text style={{fontWeight: 'bold', color: '#7A4B56', marginBottom: 5}}>Cerrar Servicio:</Text>
+                    <TextInput
+                      style={styles.modalInput}
+                      placeholder="Importe final cobrado (ej. 45)"
+                      keyboardType="numeric"
+                      value={finalPriceInput}
+                      onChangeText={setFinalPriceInput}
+                    />
+                    <View style={{flexDirection: 'row', gap: 10, marginTop: 5}}>
+                      <TouchableOpacity style={[styles.completeApptBtn, {backgroundColor: '#D48A9A'}]} onPress={() => completeService(selectedAppointment, 'paid')}>
+                        <Text style={styles.completeApptBtnText}>✅ Cobrado</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.completeApptBtn, {backgroundColor: '#f39c12'}]} onPress={() => completeService(selectedAppointment, 'pending')}>
+                        <Text style={styles.completeApptBtnText}>⏳ Dejado a deber</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                )}
+              </View>
+
               <View style={styles.statusActionRow}>
                 <View style={{ flex: 1, gap: 10 }}>
                   {selectedAppointment.phone ? (
@@ -1617,6 +1624,7 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 10, height: 10, borderRadius: 5 },
   legendText: { fontSize: 12, color: '#666' },
+  paymentSection: { marginTop: 15, padding: 15, backgroundColor: '#F9F1F3', borderRadius: 8, borderWidth: 1, borderColor: '#EADDE0' },
   monthSummary: { backgroundColor: '#fff', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#e0e8f0', marginTop: 4 },
   monthSummaryTitle: { fontSize: 15, fontWeight: 'bold', color: '#7A4B56', marginBottom: 12 },
   monthSummaryRow: { flexDirection: 'row', justifyContent: 'space-around' },

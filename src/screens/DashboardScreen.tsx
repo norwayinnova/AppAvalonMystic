@@ -108,10 +108,21 @@ export default function DashboardScreen() {
       month: { clients: 0, revenue: 0, byTeam: {} as Record<string, { clients: number, revenue: number }> }
     };
 
+    const pendingPayments: any[] = [];
+
     appointments.forEach(app => {
       if (!app.date) return;
       const team = app.team || 'Sin asignar';
-      const price = parseFloat(app.price) || 0;
+      
+      let price = 0;
+      if (app.status === 'completed' && app.paymentStatus === 'paid' && app.finalPrice) {
+        price = parseFloat(app.finalPrice) || 0;
+      }
+
+      // Collect pending payments
+      if (app.paymentStatus === 'pending') {
+        pendingPayments.push(app);
+      }
 
       // Initialize team objects if not present
       ['day', 'week', 'month'].forEach(period => {
@@ -145,7 +156,7 @@ export default function DashboardScreen() {
       }
     });
 
-    return data;
+    return { ...data, pendingPayments };
   }, [appointments]);
 
   if (loading) {
@@ -195,6 +206,24 @@ export default function DashboardScreen() {
       {renderStatCard('Hoy', stats.day)}
       {renderStatCard('Esta Semana', stats.week)}
       {renderStatCard('Este Mes', stats.month)}
+
+      {/* TARJETA DE DEUDAS / PAGOS PENDIENTES */}
+      <View style={styles.card}>
+        <Text style={[styles.cardTitle, {color: '#f39c12'}]}>⏳ Deudas y Pagos Pendientes</Text>
+        {stats.pendingPayments.length > 0 ? (
+          stats.pendingPayments.map((app: any) => (
+            <View key={app.id} style={styles.teamRow}>
+              <View>
+                <Text style={styles.teamName}>👤 {app.client}</Text>
+                <Text style={styles.teamStats}>📅 {app.date} - ✨ {app.serviceName}</Text>
+              </View>
+              <Text style={[styles.summaryValue, {fontSize: 16, color: '#f39c12'}]}>{app.finalPrice} €</Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.noDataText}>No hay pagos pendientes de cobro.</Text>
+        )}
+      </View>
 
       {/* TARJETA DE ADMINISTRACIÓN */}
       <View style={styles.card}>
