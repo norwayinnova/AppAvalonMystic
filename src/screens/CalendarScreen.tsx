@@ -509,11 +509,13 @@ export default function CalendarScreen({ route, navigation }: any) {
             <TouchableOpacity style={[styles.manageTeamsBtn, {backgroundColor: '#f5f7fa', borderColor: '#e0e8f0'}]} onPress={() => {
               const newPin = window.prompt("Introduce tu nuevo PIN personal (4 dígitos):");
               if (newPin && newPin.length === 4) {
-                 const t = teams.find(t => t.name === teamName);
+                 const t = teams.find(t => t.name === userTeamName);
                  if (t) {
                    require('firebase/firestore').updateDoc(require('firebase/firestore').doc(db, 'teams', t.id), { pin: newPin })
                      .then(() => alert('Tu PIN ha sido actualizado con éxito.'))
                      .catch(() => alert('Hubo un error al actualizar tu PIN.'));
+                 } else {
+                   alert('No se encontró tu equipo.');
                  }
               } else if (newPin) {
                  alert('El PIN debe tener exactamente 4 dígitos numéricos.');
