@@ -7,10 +7,17 @@ import {
   TextInput,
   TouchableOpacity,
   Linking,
-  ActivityIndicator
+  ActivityIndicator,
+  LayoutAnimation,
+  Platform,
+  UIManager
 } from 'react-native';
-import { collection, onSnapshot, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../config/firebase';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 interface Client {
   id: string;
@@ -33,9 +40,12 @@ interface Appointment {
   address?: string;
   detailedInfo?: string;
   team?: string;
+  status?: 'pending' | 'completed' | 'cancelled';
+  paymentStatus?: 'paid' | 'pending';
+  finalPrice?: string;
 }
 
-export default function ClientsScreen({ navigation }: any) {
+export default function ClientsScreen() {
   const [clients, setClients] = useState<Client[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,11 +62,10 @@ export default function ClientsScreen({ navigation }: any) {
       setClients(list);
       setLoading(false);
     });
-
     return () => unsubscribeClients();
   }, []);
 
-  // 2. Cargar todas las Citas para el Historial
+  // 2. Cargar Citas
   useEffect(() => {
     const qApps = query(collection(db, 'appointments'));
     const unsubscribeApps = onSnapshot(qApps, (snapshot) => {
@@ -65,7 +74,6 @@ export default function ClientsScreen({ navigation }: any) {
       list.sort((a, b) => b.date.localeCompare(a.date));
       setAppointments(list);
     });
-
     return () => unsubscribeApps();
   }, []);
 
@@ -75,6 +83,7 @@ export default function ClientsScreen({ navigation }: any) {
   };
 
   const toggleHistory = (clientId: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedClientId(prev => prev === clientId ? null : clientId);
   };
 
@@ -88,7 +97,6 @@ export default function ClientsScreen({ navigation }: any) {
     }
   };
 
-  // 3. Procesar, filtrar y ordenar clientes
   const clientsWithStats = clients.map(client => {
     const clientHistory = appointments.filter(a =>
       (client.phone && a.phone === client.phone) ||
@@ -106,13 +114,7 @@ export default function ClientsScreen({ navigation }: any) {
       return sum;
     }, 0);
 
-    return {
-      ...client,
-      clientHistory,
-      completedCount,
-      cancelledCount,
-      totalSpent
-    };
+    return { ...client, clientHistory, completedCount, cancelledCount, totalSpent };
   });
 
   const filteredClients = clientsWithStats.filter(c => {
@@ -139,95 +141,83 @@ export default function ClientsScreen({ navigation }: any) {
         <FlatList
           data={filteredClients}
           keyExtractor={(item) => item.id}
+          contentContainerStyle={{ paddingBottom: 50 }}
           renderItem={({ item }) => {
             const { clientHistory, completedCount, cancelledCount, totalSpent } = item;
-            
             const isProblematic = cancelledCount >= 2;
             const isVIP = completedCount >= 10;
             const isExpanded = expandedClientId === item.id;
+            
+            // Generate initials
+            const initials = item.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
 
             return (
-              <View style={styles.clientCard}>
+              <TouchableOpacity 
+                activeOpacity={0.95}
+                style={[
+                  styles.clientCard, 
+                  isVIP && { borderColor: 'rgba(241, 196, 15, 0.5)', backgroundColor: 'rgba(255, 249, 230, 0.9)' },
+                  isProblematic && { borderColor: 'rgba(231, 76, 60, 0.5)', backgroundColor: 'rgba(253, 240, 240, 0.9)' }
+                ]}
+                onPress={() => toggleHistory(item.id)}
+              >
                 <View style={styles.cardHeader}>
-                  <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <View>
-                      <Text style={styles.clientName}>👤 {item.name}</Text>
-                      {isVIP && (
-                        <Text style={{color: '#f39c12', fontWeight: 'bold', fontSize: 13, marginTop: 2}}>
-                          🏆 Clienta VIP ({completedCount} servicios)
-                        </Text>
-                      )}
-                      {isProblematic && (
-                        <Text style={{color: '#c0392b', fontWeight: 'bold', fontSize: 12, marginTop: 2}}>
-                          ⚠️ Clienta Problemática ({cancelledCount} cancelaciones)
-                        </Text>
-                      )}
-                      {item.phone ? (
-                        <TouchableOpacity style={styles.phoneRow} onPress={() => callClient(item.phone)}>
-                          <Text style={styles.phoneText}>📞 {item.phone}</Text>
-                        </TouchableOpacity>
-                      ) : null}
-                    </View>
-                    <TouchableOpacity onPress={() => deleteClient(item.id, item.name)} style={styles.deleteBtn}>
-                      <Text style={styles.deleteBtnText}>🗑️</Text>
-                    </TouchableOpacity>
+                  <View style={styles.avatarContainer}>
+                    <Text style={styles.avatarText}>{initials}</Text>
                   </View>
 
-                  <View style={styles.badgeColumn}>
-                    <View style={styles.countBadge}>
-                      <Text style={styles.countBadgeText}>{completedCount} serv.</Text>
-                    </View>
-                    {cancelledCount > 0 && (
-                      <Text style={{fontSize: 11, color: '#c0392b', marginTop: 4, fontWeight: 'bold', textAlign: 'center'}}>❌ {cancelledCount} canc.</Text>
-                    )}
-                    {totalSpent > 0 ? (
-                      <Text style={styles.totalSpentText}>💶 {totalSpent.toFixed(2)} €</Text>
+                  <View style={styles.clientInfo}>
+                    <Text style={styles.clientName}>{item.name}</Text>
+                    {item.phone ? (
+                      <TouchableOpacity onPress={() => callClient(item.phone)}>
+                        <Text style={styles.clientPhone}>📞 {item.phone}</Text>
+                      </TouchableOpacity>
                     ) : null}
+                    
+                    <View style={styles.badgesRow}>
+                      <Text style={styles.badgeText}>✅ {completedCount} citas</Text>
+                      {cancelledCount > 0 && <Text style={[styles.badgeText, { color: '#e74c3c' }]}>❌ {cancelledCount} canceladas</Text>}
+                      <Text style={[styles.badgeText, { color: '#2ecc71', fontWeight: 'bold' }]}>💰 {totalSpent.toFixed(0)}€ totales</Text>
+                    </View>
+                    
+                    {isVIP && <Text style={styles.vipTag}>🏆 Clienta VIP Avalon</Text>}
+                    {isProblematic && <Text style={styles.problemTag}>⚠️ ATENCIÓN: Pedir Fianza.</Text>}
                   </View>
+
+                  <TouchableOpacity onPress={() => deleteClient(item.id, item.name)} style={styles.deleteBtn}>
+                    <Text style={styles.deleteBtnText}>🗑️</Text>
+                  </TouchableOpacity>
                 </View>
-
-                {item.address ? (
-                  <Text style={styles.addressText}>📍 {item.address}</Text>
-                ) : null}
-                {item.detailedInfo ? (
-                  <Text style={styles.detailedText}>🏢 {item.detailedInfo}</Text>
-                ) : null}
-
-                {/* BOTÓN PARA DESPLEGAR EL HISTORIAL */}
-                <TouchableOpacity
-                  style={styles.historyToggleBtn}
-                  onPress={() => toggleHistory(item.id)}
-                >
-                  <Text style={styles.historyToggleText}>
-                    {isExpanded ? 'Ocultar Historial ▲' : `Ver Historial (${clientHistory.length} citas) ▼`}
-                  </Text>
-                </TouchableOpacity>
 
                 {isExpanded && (
                   <View style={styles.historyContainer}>
-                    <Text style={styles.historyTitle}>📋 Historial de Servicios Contratados:</Text>
-                    {clientHistory.length > 0 ? (
-                      clientHistory.map((hist) => (
-                        <View key={hist.id} style={styles.historyItem}>
-                          <View style={styles.historyItemRow}>
-                            <Text style={styles.historyDate}>📅 {hist.date} ({hist.time})</Text>
-                            {hist.price ? <Text style={styles.historyPrice}>💶 {hist.price} €</Text> : null}
-                          </View>
-                          <Text style={styles.historyService}>✨ {hist.serviceName} · {hist.team || 'Equipo 1'}</Text>
-                          {hist.address ? <Text style={styles.historyAddress}>📍 {hist.address}</Text> : null}
+                    <Text style={styles.historyTitle}>📋 Últimos Servicios:</Text>
+                    {clientHistory.length === 0 ? (
+                      <Text style={styles.noHistory}>No hay servicios registrados.</Text>
+                    ) : (
+                      clientHistory.slice(0, 5).map(app => (
+                        <View key={app.id} style={styles.historyItem}>
+                          <Text style={styles.historyDate}>{app.date} a las {app.time}</Text>
+                          <Text style={styles.historyService}>{app.serviceName}</Text>
+                          <Text style={[styles.historyStatus, 
+                            app.status === 'completed' ? {color: '#2ecc71'} : 
+                            app.status === 'cancelled' ? {color: '#e74c3c'} : 
+                            {color: '#f39c12'}
+                          ]}>
+                            {app.status === 'completed' ? `Completado (${app.finalPrice || app.price}€)` : 
+                             app.status === 'cancelled' ? 'Cancelado' : 'Pendiente'}
+                          </Text>
                         </View>
                       ))
-                    ) : (
-                      <Text style={styles.noHistory}>No hay citas registradas aún.</Text>
                     )}
                   </View>
                 )}
-              </View>
+              </TouchableOpacity>
             );
           }}
           ListEmptyComponent={
             <Text style={styles.empty}>
-              {searchTerm ? 'No se encontraron clientes.' : 'Aún no hay clientes registrados. Se crearán automáticamente al programar citas.'}
+              {searchTerm ? 'No se encontraron clientes.' : 'Aún no hay clientes registrados.'}
             </Text>
           }
         />
@@ -237,75 +227,78 @@ export default function ClientsScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#FDF9fa' },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 15, color: '#7A4B56' },
+  container: { flex: 1, backgroundColor: '#f2f4f7', padding: 15 },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 15 },
   searchInput: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.9)',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#e1e8ed',
+    borderRadius: 20,
     padding: 12,
-    borderRadius: 8,
-    marginBottom: 15,
-    fontSize: 15
-  },
-  clientCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#EADDE0',
+    fontSize: 16,
+    marginBottom: 20,
     elevation: 2,
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 }
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
-  clientName: { fontSize: 17, fontWeight: 'bold', color: '#7A4B56' },
-  phoneRow: { marginTop: 4, alignSelf: 'flex-start' },
-  phoneText: { color: '#7A4B56', fontWeight: 'bold', fontSize: 14, backgroundColor: '#FFF5F7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-  badgeColumn: { alignItems: 'flex-end', gap: 4 },
-  countBadge: { backgroundColor: '#7A4B56', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  countBadgeText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
-  totalSpentText: { color: '#D48A9A', fontWeight: 'bold', fontSize: 13 },
-  addressText: { color: '#444', fontSize: 14, marginTop: 4 },
-  detailedText: { color: '#8a5800', fontSize: 12, fontWeight: 'bold', marginTop: 2 },
   
-  historyToggleBtn: {
-    backgroundColor: '#FDF9fa',
-    paddingVertical: 8,
-    borderRadius: 6,
+  clientCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderRadius: 16,
+    padding: 15,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,1)',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+  },
+  
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+
+  avatarContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#ffeaf0',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginRight: 15,
     borderWidth: 1,
-    borderColor: '#d0e0f0'
+    borderColor: '#ffcce0',
+    shadowColor: '#D48A9A',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
   },
-  historyToggleText: { color: '#7A4B56', fontWeight: 'bold', fontSize: 13 },
+  avatarText: { fontSize: 18, fontWeight: 'bold', color: '#D48A9A' },
   
-  historyContainer: {
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#eee'
-  },
-  historyTitle: { fontSize: 13, fontWeight: 'bold', color: '#7A4B56', marginBottom: 8 },
-  historyItem: {
-    backgroundColor: '#fafbfc',
-    padding: 10,
-    borderRadius: 6,
-    marginBottom: 6,
-    borderLeftWidth: 3,
-    borderLeftColor: '#D48A9A',
-    borderWidth: 1,
-    borderColor: '#eee'
-  },
-  historyItemRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
-  historyDate: { fontWeight: 'bold', color: '#333', fontSize: 13 },
-  historyPrice: { fontWeight: 'bold', color: '#D48A9A', fontSize: 13 },
-  historyService: { color: '#7A4B56', fontSize: 12, fontWeight: 'bold' },
-  historyAddress: { color: '#777', fontSize: 11, marginTop: 2 },
-  noHistory: { color: '#888', fontStyle: 'italic', fontSize: 12 },
-  empty: { textAlign: 'center', color: '#888', marginTop: 30, fontStyle: 'italic', fontSize: 15 },
-  deleteBtn: { padding: 8, backgroundColor: '#ffe5e5', borderRadius: 6, alignSelf: 'flex-start', marginLeft: 10 },
-  deleteBtnText: { fontSize: 16 }
+  clientInfo: { flex: 1, justifyContent: 'center' },
+  clientName: { fontSize: 18, fontWeight: 'bold', color: '#2c3e50' },
+  clientPhone: { fontSize: 14, color: '#3498db', marginTop: 2, fontWeight: '500' },
+  
+  badgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 6 },
+  badgeText: { fontSize: 12, color: '#7f8c8d' },
+  
+  vipTag: { color: '#f39c12', fontWeight: 'bold', fontSize: 13, marginTop: 5 },
+  problemTag: { color: '#c0392b', fontWeight: 'bold', fontSize: 12, marginTop: 5 },
+  
+  deleteBtn: { padding: 8, backgroundColor: 'rgba(255,0,0,0.05)', borderRadius: 20, marginLeft: 10 },
+  deleteBtnText: { fontSize: 16 },
+  
+  historyContainer: { marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)' },
+  historyTitle: { fontSize: 14, fontWeight: 'bold', color: '#444', marginBottom: 10 },
+  historyItem: { backgroundColor: 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 10, marginBottom: 8 },
+  historyDate: { fontSize: 12, color: '#666', fontWeight: 'bold' },
+  historyService: { fontSize: 14, color: '#333', marginTop: 2 },
+  historyStatus: { fontSize: 12, marginTop: 4, fontWeight: 'bold' },
+  noHistory: { fontSize: 13, color: '#888', fontStyle: 'italic' },
+  empty: { textAlign: 'center', color: '#888', marginTop: 30, fontStyle: 'italic', fontSize: 15 }
 });
