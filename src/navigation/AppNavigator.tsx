@@ -127,7 +127,7 @@ export default function AppNavigator() {
           ),
           headerRight: () => role ? (
             <TouchableOpacity onPress={logout} style={{marginRight: 15, padding: 6, backgroundColor: 'rgba(233,30,99,0.1)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(233,30,99,0.3)'}}>
-              <Text style={{color: '#E91E63', fontWeight: 'bold', fontSize: 13}}>Salir 🔒</Text>
+              <Text style={{color: '#D48A9A', fontWeight: 'bold', fontSize: 13}}>Salir 🔒</Text>
             </TouchableOpacity>
           ) : null
         }}
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent'
   },
   tabButtonActive: {
-    borderBottomColor: '#E91E63', // Pink accent
+    borderBottomColor: '#D48A9A', // Pink accent
   },
   tabButtonInactive: {
     borderBottomColor: 'transparent',
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   },
   tabTextActive: {
-    color: '#E91E63',
+    color: '#D48A9A',
     fontWeight: 'bold',
   },
   tabTextInactive: {

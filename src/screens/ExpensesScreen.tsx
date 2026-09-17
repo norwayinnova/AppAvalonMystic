@@ -177,7 +177,7 @@ export default function ExpensesScreen() {
 
     const ticketsHtml = filteredExpenses.filter(e => e.ticketUrl).map(e => `
       <div style="page-break-before: always; font-family: sans-serif; padding: 20px;">
-        <h2 style="color: #002a54;">Ticket Adjunto</h2>
+        <h2 style="color: #7A4B56;">Ticket Adjunto</h2>
         <p><strong>Fecha:</strong> ${e.date}</p>
         <p><strong>Concepto:</strong> ${e.concept}</p>
         <p><strong>Importe:</strong> ${e.amount.toFixed(2)} €</p>
@@ -302,7 +302,7 @@ export default function ExpensesScreen() {
       
       {ticketImage && (
         <View style={{ alignItems: 'center', marginBottom: 15 }}>
-          <Text style={{ color: '#4a9b40', fontWeight: 'bold', marginBottom: 4 }}>✓ Ticket adjuntado correctamente</Text>
+          <Text style={{ color: '#D48A9A', fontWeight: 'bold', marginBottom: 4 }}>✓ Ticket adjuntado correctamente</Text>
           <Image source={{ uri: ticketImage }} style={styles.previewImg} />
         </View>
       )}
@@ -328,13 +328,13 @@ export default function ExpensesScreen() {
         <Text style={styles.exportTitle}>📤 Exportar Informe a Gestoría (PDF)</Text>
         <View style={styles.formRow}>
           <TextInput
-            style={[styles.input, { flex: 1, backgroundColor: '#f0f4f8' }]}
+            style={[styles.input, { flex: 1, backgroundColor: '#FDF9fa' }]}
             placeholder="Desde YYYY-MM-DD"
             value={filterStart}
             onChangeText={setFilterStart}
           />
           <TextInput
-            style={[styles.input, { flex: 1, backgroundColor: '#f0f4f8' }]}
+            style={[styles.input, { flex: 1, backgroundColor: '#FDF9fa' }]}
             placeholder="Hasta YYYY-MM-DD"
             value={filterEnd}
             onChangeText={setFilterEnd}
@@ -397,8 +397,8 @@ const styles = StyleSheet.create({
   teamChipActive: { backgroundColor: '#d9534f', borderColor: '#d9534f' },
   teamChipTextActive: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
   teamChipTextInactive: { color: '#555', fontSize: 13 },
-  photoBtnSmall: { flex: 1, backgroundColor: '#f0f4f8', borderWidth: 1, borderColor: '#dbe2ea', paddingVertical: 12, paddingHorizontal: 5, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-  photoBtnText: { color: '#002a54', fontWeight: 'bold', fontSize: 13 },
+  photoBtnSmall: { flex: 1, backgroundColor: '#FDF9fa', borderWidth: 1, borderColor: '#EADDE0', paddingVertical: 12, paddingHorizontal: 5, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  photoBtnText: { color: '#7A4B56', fontWeight: 'bold', fontSize: 13 },
   previewImg: { width: 100, height: 100, borderRadius: 8, alignSelf: 'center', marginBottom: 5 },
   buttonAdd: { backgroundColor: '#d9534f', padding: 14, borderRadius: 8, alignItems: 'center' },
   buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
@@ -415,8 +415,8 @@ const styles = StyleSheet.create({
   expenseRight: { alignItems: 'flex-end' },
   expenseAmount: { fontSize: 16, fontWeight: 'bold', color: '#d9534f', marginBottom: 6 },
   cardActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  ticketBtn: { backgroundColor: '#eef4fa', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, borderWidth: 1, borderColor: '#cce0f5' },
-  ticketIcon: { fontSize: 12, color: '#002a54', fontWeight: 'bold' },
+  ticketBtn: { backgroundColor: '#F9F1F3', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, borderWidth: 1, borderColor: '#cce0f5' },
+  ticketIcon: { fontSize: 12, color: '#7A4B56', fontWeight: 'bold' },
   iconBtn: { padding: 4 },
   actionIcon: { fontSize: 16 },
   empty: { color: '#888', fontStyle: 'italic', textAlign: 'center', marginTop: 20 }

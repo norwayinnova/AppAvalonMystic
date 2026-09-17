@@ -456,8 +456,8 @@ export default function AppointmentsScreen({ navigation }: any) {
         <View style={styles.calendarContainer}>
           <Calendar
             onDayPress={(day: any) => { setDate(day.dateString); setShowCalendar(false); }}
-            markedDates={{ [date]: { selected: true, selectedColor: '#4a9b40' } }}
-            theme={{ todayTextColor: '#002a54', arrowColor: '#002a54' }}
+            markedDates={{ [date]: { selected: true, selectedColor: '#D48A9A' } }}
+            theme={{ todayTextColor: '#7A4B56', arrowColor: '#7A4B56' }}
           />
         </View>
       )}
@@ -490,11 +490,11 @@ export default function AppointmentsScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#f9f9f9' },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 15, color: '#002a54' },
-  subtitle: { fontSize: 16, fontWeight: 'bold', marginTop: 10, marginBottom: 10, color: '#002a54' },
-  inputLabel: { fontSize: 13, fontWeight: 'bold', color: '#002a54', marginBottom: 4 },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 15, color: '#7A4B56' },
+  subtitle: { fontSize: 16, fontWeight: 'bold', marginTop: 10, marginBottom: 10, color: '#7A4B56' },
+  inputLabel: { fontSize: 13, fontWeight: 'bold', color: '#7A4B56', marginBottom: 4 },
   input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', padding: 12, borderRadius: 8, fontSize: 15 },
-  inputValidated: { borderColor: '#4a9b40', borderWidth: 2, backgroundColor: '#fafffa' },
+  inputValidated: { borderColor: '#D48A9A', borderWidth: 2, backgroundColor: '#fafffa' },
   
   existingClientBox: {
     backgroundColor: '#e8f4fd',
@@ -505,27 +505,27 @@ const styles = StyleSheet.create({
     marginTop: 6
   },
   existingClientText: { color: '#0c5460', fontWeight: 'bold', fontSize: 13, marginBottom: 6 },
-  autofillBtn: { backgroundColor: '#002a54', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 6, alignItems: 'center' },
+  autofillBtn: { backgroundColor: '#7A4B56', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 6, alignItems: 'center' },
   autofillBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
 
   // Validación de Dirección
   addressSection: { marginBottom: 12 },
   addressInputRow: { flexDirection: 'row', gap: 6, alignItems: 'center', marginBottom: 6 },
-  validateBtn: { backgroundColor: '#4a9b40', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 8, justifyContent: 'center' },
+  validateBtn: { backgroundColor: '#D48A9A', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 8, justifyContent: 'center' },
   validateBtnText: { color: '#ffffff', fontWeight: 'bold', fontSize: 13 },
-  mapsVerifyBtn: { backgroundColor: '#eef4fa', borderWidth: 1, borderColor: '#002a54', paddingHorizontal: 10, paddingVertical: 12, borderRadius: 8, justifyContent: 'center' },
-  mapsVerifyText: { color: '#002a54', fontWeight: 'bold', fontSize: 13 },
+  mapsVerifyBtn: { backgroundColor: '#F9F1F3', borderWidth: 1, borderColor: '#7A4B56', paddingHorizontal: 10, paddingVertical: 12, borderRadius: 8, justifyContent: 'center' },
+  mapsVerifyText: { color: '#7A4B56', fontWeight: 'bold', fontSize: 13 },
   validatingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 4 },
   validatingText: { color: '#666', fontSize: 12, fontStyle: 'italic' },
-  suggestionsCard: { backgroundColor: '#ffffff', borderRadius: 8, borderWidth: 1, borderColor: '#cfe0f2', marginTop: 4, elevation: 4, shadowOpacity: 0.15 },
-  suggestionsHeader: { backgroundColor: '#f0f6fc', paddingHorizontal: 12, paddingVertical: 8, fontWeight: 'bold', color: '#002a54', fontSize: 12, borderTopLeftRadius: 7, borderTopRightRadius: 7 },
+  suggestionsCard: { backgroundColor: '#ffffff', borderRadius: 8, borderWidth: 1, borderColor: '#E8CED4', marginTop: 4, elevation: 4, shadowOpacity: 0.15 },
+  suggestionsHeader: { backgroundColor: '#f0f6fc', paddingHorizontal: 12, paddingVertical: 8, fontWeight: 'bold', color: '#7A4B56', fontSize: 12, borderTopLeftRadius: 7, borderTopRightRadius: 7 },
   suggestionItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  suggestionItemTitle: { fontWeight: 'bold', color: '#002a54', fontSize: 14 },
+  suggestionItemTitle: { fontWeight: 'bold', color: '#7A4B56', fontSize: 14 },
   suggestionItemSubtitle: { color: '#555', fontSize: 12, marginTop: 2 },
-  validatedBadge: { backgroundColor: '#eaf5ea', borderWidth: 1, borderColor: '#a3d9a3', padding: 8, borderRadius: 6, marginTop: 4 },
-  validatedBadgeText: { color: '#256320', fontWeight: 'bold', fontSize: 12 },
+  validatedBadge: { backgroundColor: '#FFF5F7', borderWidth: 1, borderColor: '#a3d9a3', padding: 8, borderRadius: 6, marginTop: 4 },
+  validatedBadgeText: { color: '#7A4B56', fontWeight: 'bold', fontSize: 12 },
 
-  smartButton: { backgroundColor: '#002a54', padding: 12, borderRadius: 8, alignItems: 'center', marginBottom: 15 },
+  smartButton: { backgroundColor: '#7A4B56', padding: 12, borderRadius: 8, alignItems: 'center', marginBottom: 15 },
   smartButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
   suggestionBox: { backgroundColor: '#e3f2fd', padding: 15, borderRadius: 8, borderWidth: 1, borderColor: '#90caf9', marginBottom: 15 },
   suggestionText: { color: '#0d47a1', fontSize: 14, marginBottom: 10, lineHeight: 20 },
@@ -533,18 +533,18 @@ const styles = StyleSheet.create({
   applyBtnText: { color: '#fff', fontWeight: 'bold' },
   scrollRow: { flexGrow: 0, marginBottom: 15 },
   chipBtn: { paddingVertical: 10, paddingHorizontal: 15, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 20, marginRight: 10, justifyContent: 'center' },
-  chipSelected: { paddingVertical: 10, paddingHorizontal: 15, backgroundColor: '#002a54', borderWidth: 1, borderColor: '#002a54', borderRadius: 20, marginRight: 10, justifyContent: 'center' },
+  chipSelected: { paddingVertical: 10, paddingHorizontal: 15, backgroundColor: '#7A4B56', borderWidth: 1, borderColor: '#7A4B56', borderRadius: 20, marginRight: 10, justifyContent: 'center' },
   textSelected: { color: '#fff', fontWeight: 'bold' },
   textUnselected: { color: '#333' },
-  chipAvailable: { paddingVertical: 10, paddingHorizontal: 15, backgroundColor: '#e8f5e9', borderWidth: 1, borderColor: '#4a9b40', borderRadius: 20, marginRight: 10, justifyContent: 'center' },
-  textAvailable: { color: '#4a9b40', fontWeight: 'bold' },
+  chipAvailable: { paddingVertical: 10, paddingHorizontal: 15, backgroundColor: '#FFF5F7', borderWidth: 1, borderColor: '#D48A9A', borderRadius: 20, marginRight: 10, justifyContent: 'center' },
+  textAvailable: { color: '#D48A9A', fontWeight: 'bold' },
   chipConflict: { paddingVertical: 10, paddingHorizontal: 15, backgroundColor: '#ffe5e5', borderWidth: 1, borderColor: '#d9534f', borderRadius: 20, marginRight: 10, justifyContent: 'center', opacity: 0.8 },
   textConflict: { color: '#d9534f', textDecorationLine: 'line-through' },
   dropdownBtn: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', padding: 15, borderRadius: 8, marginBottom: 10, alignItems: 'center' },
-  dropdownText: { color: '#002a54', fontWeight: 'bold', fontSize: 16 },
+  dropdownText: { color: '#7A4B56', fontWeight: 'bold', fontSize: 16 },
   calendarContainer: { borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: '#ddd', marginBottom: 10 },
   buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 15, marginBottom: 40 },
-  saveButton: { backgroundColor: '#4a9b40', padding: 15, borderRadius: 8, alignItems: 'center', flex: 1, marginLeft: 10 },
+  saveButton: { backgroundColor: '#D48A9A', padding: 15, borderRadius: 8, alignItems: 'center', flex: 1, marginLeft: 10 },
   saveButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   cancelButton: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#d9534f', padding: 15, borderRadius: 8, alignItems: 'center', flex: 1, marginRight: 10 },
   cancelButtonText: { color: '#d9534f', fontWeight: 'bold', fontSize: 16 }

@@ -149,7 +149,7 @@ export default function DashboardScreen() {
   }, [appointments]);
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#E91E63" style={{ flex: 1, justifyContent: 'center' }} />;
+    return <ActivityIndicator size="large" color="#D48A9A" style={{ flex: 1, justifyContent: 'center' }} />;
   }
 
   const renderStatCard = (title: string, periodData: any) => {
@@ -253,13 +253,13 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 15, backgroundColor: '#f9f9f9' },
-  mainTitle: { fontSize: 22, fontWeight: 'bold', color: '#E91E63', marginBottom: 20, textAlign: 'center' },
+  mainTitle: { fontSize: 22, fontWeight: 'bold', color: '#D48A9A', marginBottom: 20, textAlign: 'center' },
   card: { backgroundColor: '#fff', borderRadius: 10, padding: 15, marginBottom: 15, elevation: 2, shadowColor: '#000', shadowOpacity: 0.1, shadowOffset: {width: 0, height: 2} },
   cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 15, borderBottomWidth: 1, borderBottomColor: '#eee', paddingBottom: 8 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
   summaryBox: { alignItems: 'center', flex: 1 },
   summaryLabel: { fontSize: 14, color: '#666', marginBottom: 5 },
-  summaryValue: { fontSize: 24, fontWeight: 'bold', color: '#E91E63' },
+  summaryValue: { fontSize: 24, fontWeight: 'bold', color: '#D48A9A' },
   subtitle: { fontSize: 14, fontWeight: '600', color: '#444', marginBottom: 10 },
   teamRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
   teamName: { fontSize: 14, color: '#333', fontWeight: '500' },
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   noDataText: { fontSize: 14, color: '#999', fontStyle: 'italic', textAlign: 'center', marginTop: 10 },
   inputRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
   input: { flex: 1, backgroundColor: '#f5f5f5', borderWidth: 1, borderColor: '#ddd', padding: 10, borderRadius: 6 },
-  btnAction: { backgroundColor: '#E91E63', paddingVertical: 12, paddingHorizontal: 15, borderRadius: 6 },
+  btnAction: { backgroundColor: '#D48A9A', paddingVertical: 12, paddingHorizontal: 15, borderRadius: 6 },
   btnText: { color: '#fff', fontWeight: 'bold' },
   delBtn: { padding: 8, backgroundColor: '#ffebee', borderRadius: 4 },
   delBtnText: { color: '#d32f2f', fontSize: 12, fontWeight: 'bold' }

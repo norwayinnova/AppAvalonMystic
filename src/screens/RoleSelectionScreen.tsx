@@ -123,7 +123,7 @@ export default function RoleSelectionScreen() {
               </View>
 
               {loading ? (
-                <ActivityIndicator color="#4a9b40" size="large" style={{ marginTop: 20 }} />
+                <ActivityIndicator color="#D48A9A" size="large" style={{ marginTop: 20 }} />
               ) : (
                 teams.map((t, i) => (
                   <TouchableOpacity
@@ -155,7 +155,7 @@ export default function RoleSelectionScreen() {
   );
 }
 
-const TEAM_COLORS = ['#4a9b40', '#3498db', '#f39c12', '#9b59b6', '#e74c3c'];
+const TEAM_COLORS = ['#D48A9A', '#D48A9A', '#f39c12', '#9b59b6', '#e74c3c'];
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d1b2a' },
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 20, gap: 10 },
   dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
   dividerText: { color: 'rgba(255,255,255,0.35)', fontSize: 12 },
-  mgmtBtn: { backgroundColor: 'rgba(74,155,64,0.15)', borderWidth: 1.5, borderColor: '#4a9b40', borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, marginTop: 8 },
+  mgmtBtn: { backgroundColor: 'rgba(74,155,64,0.15)', borderWidth: 1.5, borderColor: '#D48A9A', borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, marginTop: 8 },
   mgmtBtnTitle: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   mgmtBtnSub: { color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 2 },
   pinSection: { gap: 4 },
@@ -187,11 +187,11 @@ const styles = StyleSheet.create({
   pinSubtitle: { color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginBottom: 20, fontSize: 14 },
   pinDots: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginBottom: 20 },
   pinDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)', backgroundColor: 'transparent' },
-  pinDotFilled: { backgroundColor: '#4a9b40', borderColor: '#4a9b40' },
+  pinDotFilled: { backgroundColor: '#D48A9A', borderColor: '#D48A9A' },
   hiddenInput: { position: 'absolute', opacity: 0, height: 0 },
   errorBox: { backgroundColor: 'rgba(217,83,79,0.15)', borderRadius: 8, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: 'rgba(217,83,79,0.4)' },
   errorText: { color: '#ff6b6b', textAlign: 'center', fontWeight: 'bold', fontSize: 13 },
-  primaryBtn: { backgroundColor: '#4a9b40', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
+  primaryBtn: { backgroundColor: '#D48A9A', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
   primaryBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   ghostBtn: { padding: 14, alignItems: 'center', marginTop: 6 },
   ghostBtnText: { color: 'rgba(255,255,255,0.45)', fontWeight: 'bold', fontSize: 14 },

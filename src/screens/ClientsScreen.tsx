@@ -98,7 +98,7 @@ export default function ClientsScreen({ navigation }: any) {
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color="#4a9b40" style={{ marginTop: 30 }} />
+        <ActivityIndicator size="large" color="#D48A9A" style={{ marginTop: 30 }} />
       ) : (
         <FlatList
           data={filteredClients}
@@ -191,8 +191,8 @@ export default function ClientsScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#f0f4f8' },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 15, color: '#002a54' },
+  container: { flex: 1, padding: 20, backgroundColor: '#FDF9fa' },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 15, color: '#7A4B56' },
   searchInput: {
     backgroundColor: '#fff',
     borderWidth: 1,
@@ -208,25 +208,25 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#dbe2ea',
+    borderColor: '#EADDE0',
     elevation: 2,
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 }
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
-  clientName: { fontSize: 17, fontWeight: 'bold', color: '#002a54' },
+  clientName: { fontSize: 17, fontWeight: 'bold', color: '#7A4B56' },
   phoneRow: { marginTop: 4, alignSelf: 'flex-start' },
-  phoneText: { color: '#256320', fontWeight: 'bold', fontSize: 14, backgroundColor: '#eef7ee', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  phoneText: { color: '#7A4B56', fontWeight: 'bold', fontSize: 14, backgroundColor: '#FFF5F7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
   badgeColumn: { alignItems: 'flex-end', gap: 4 },
-  countBadge: { backgroundColor: '#002a54', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  countBadge: { backgroundColor: '#7A4B56', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   countBadgeText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
-  totalSpentText: { color: '#4a9b40', fontWeight: 'bold', fontSize: 13 },
+  totalSpentText: { color: '#D48A9A', fontWeight: 'bold', fontSize: 13 },
   addressText: { color: '#444', fontSize: 14, marginTop: 4 },
   detailedText: { color: '#8a5800', fontSize: 12, fontWeight: 'bold', marginTop: 2 },
   
   historyToggleBtn: {
-    backgroundColor: '#f4f8fc',
+    backgroundColor: '#FDF9fa',
     paddingVertical: 8,
     borderRadius: 6,
     alignItems: 'center',
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#d0e0f0'
   },
-  historyToggleText: { color: '#002a54', fontWeight: 'bold', fontSize: 13 },
+  historyToggleText: { color: '#7A4B56', fontWeight: 'bold', fontSize: 13 },
   
   historyContainer: {
     marginTop: 10,
@@ -242,21 +242,21 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#eee'
   },
-  historyTitle: { fontSize: 13, fontWeight: 'bold', color: '#002a54', marginBottom: 8 },
+  historyTitle: { fontSize: 13, fontWeight: 'bold', color: '#7A4B56', marginBottom: 8 },
   historyItem: {
     backgroundColor: '#fafbfc',
     padding: 10,
     borderRadius: 6,
     marginBottom: 6,
     borderLeftWidth: 3,
-    borderLeftColor: '#4a9b40',
+    borderLeftColor: '#D48A9A',
     borderWidth: 1,
     borderColor: '#eee'
   },
   historyItemRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
   historyDate: { fontWeight: 'bold', color: '#333', fontSize: 13 },
-  historyPrice: { fontWeight: 'bold', color: '#4a9b40', fontSize: 13 },
-  historyService: { color: '#002a54', fontSize: 12, fontWeight: 'bold' },
+  historyPrice: { fontWeight: 'bold', color: '#D48A9A', fontSize: 13 },
+  historyService: { color: '#7A4B56', fontSize: 12, fontWeight: 'bold' },
   historyAddress: { color: '#777', fontSize: 11, marginTop: 2 },
   noHistory: { color: '#888', fontStyle: 'italic', fontSize: 12 },
   empty: { textAlign: 'center', color: '#888', marginTop: 30, fontStyle: 'italic', fontSize: 15 }

@@ -552,11 +552,11 @@ export default function CalendarScreen({ route, navigation }: any) {
         .logo {
           font-size: 38px;
           font-weight: 900;
-          color: #002a54;
+          color: #7A4B56;
           letter-spacing: -1px;
           margin-bottom: 5px;
         }
-        .logo span { color: #4a9b40; }
+        .logo span { color: #D48A9A; }
         .slogan { font-size: 11px; color: #777; text-transform: uppercase; letter-spacing: 2px; }
         
         .invoice-details {
@@ -564,7 +564,7 @@ export default function CalendarScreen({ route, navigation }: any) {
         }
         .invoice-details h1 {
           margin: 0;
-          color: #002a54;
+          color: #7A4B56;
           font-size: 36px;
           font-weight: 700;
           text-transform: uppercase;
@@ -583,11 +583,11 @@ export default function CalendarScreen({ route, navigation }: any) {
           background: #f8fafd;
           padding: 20px;
           border-radius: 8px;
-          border-left: 4px solid #002a54;
+          border-left: 4px solid #7A4B56;
         }
         .details-col h3 {
           margin-top: 0;
-          color: #002a54;
+          color: #7A4B56;
           font-size: 14px;
           text-transform: uppercase;
           margin-bottom: 10px;
@@ -600,7 +600,7 @@ export default function CalendarScreen({ route, navigation }: any) {
           margin-bottom: 30px;
         }
         table th {
-          background: #002a54;
+          background: #7A4B56;
           color: #fff;
           padding: 12px 15px;
           text-align: left;
@@ -636,7 +636,7 @@ export default function CalendarScreen({ route, navigation }: any) {
           border-bottom: 1px solid #eee;
         }
         .totals-row.grand-total {
-          background: #002a54;
+          background: #7A4B56;
           color: #fff;
           font-size: 18px;
           font-weight: 700;
@@ -653,7 +653,7 @@ export default function CalendarScreen({ route, navigation }: any) {
         }
         .payment-info h4 {
           margin: 0 0 10px 0;
-          color: #002a54;
+          color: #7A4B56;
           font-size: 14px;
           text-transform: uppercase;
         }
@@ -843,7 +843,7 @@ export default function CalendarScreen({ route, navigation }: any) {
         const today = new Date().toISOString().split('T')[0];
 
         // Colores de punto por estado
-        const STATUS_COLOR: Record<string, string> = { pending: '#f39c12', in_progress: '#3498db', completed: '#4a9b40' };
+        const STATUS_COLOR: Record<string, string> = { pending: '#f39c12', in_progress: '#D48A9A', completed: '#D48A9A' };
 
         const cells: (number | null)[] = [...Array(startOffset).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
         while (cells.length % 7 !== 0) cells.push(null);
@@ -903,8 +903,8 @@ export default function CalendarScreen({ route, navigation }: any) {
             {/* Leyenda */}
             <View style={styles.monthLegend}>
               <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#f39c12' }]} /><Text style={styles.legendText}>Pendiente</Text></View>
-              <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#3498db' }]} /><Text style={styles.legendText}>En curso</Text></View>
-              <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#4a9b40' }]} /><Text style={styles.legendText}>Completado</Text></View>
+              <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#D48A9A' }]} /><Text style={styles.legendText}>En curso</Text></View>
+              <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#D48A9A' }]} /><Text style={styles.legendText}>Completado</Text></View>
             </View>
 
             {/* Resumen del mes */}
@@ -916,7 +916,7 @@ export default function CalendarScreen({ route, navigation }: any) {
                   <Text style={styles.monthSummaryLabel}>Total citas</Text>
                 </View>
                 <View style={styles.monthSummaryKpi}>
-                  <Text style={[styles.monthSummaryNum, { color: '#4a9b40' }]}>{monthAppointments.filter(a => a.status === 'completed').length}</Text>
+                  <Text style={[styles.monthSummaryNum, { color: '#D48A9A' }]}>{monthAppointments.filter(a => a.status === 'completed').length}</Text>
                   <Text style={styles.monthSummaryLabel}>Completadas</Text>
                 </View>
                 <View style={styles.monthSummaryKpi}>
@@ -951,8 +951,8 @@ export default function CalendarScreen({ route, navigation }: any) {
               setSelectedDate(day.dateString);
               setShowCalendar(false);
             }}
-            markedDates={{ [selectedDate]: { selected: true, selectedColor: '#4a9b40' } }}
-            theme={{ todayTextColor: '#002a54', arrowColor: '#002a54' }}
+            markedDates={{ [selectedDate]: { selected: true, selectedColor: '#D48A9A' } }}
+            theme={{ todayTextColor: '#7A4B56', arrowColor: '#7A4B56' }}
           />
         </View>
       )}
@@ -976,8 +976,8 @@ export default function CalendarScreen({ route, navigation }: any) {
 
         const STATUS_COLORS: Record<string, { bg: string; border: string; text: string }> = {
           pending:     { bg: '#fffbeb', border: '#f39c12', text: '#92400e' },
-          in_progress: { bg: '#eff6ff', border: '#3498db', text: '#1e3a8a' },
-          completed:   { bg: '#f0fdf4', border: '#4a9b40', text: '#14532d' },
+          in_progress: { bg: '#eff6ff', border: '#D48A9A', text: '#1e3a8a' },
+          completed:   { bg: '#f0fdf4', border: '#D48A9A', text: '#14532d' },
         };
 
         return (
@@ -988,9 +988,9 @@ export default function CalendarScreen({ route, navigation }: any) {
                 const teamApps = appointments.filter(a => (a.team || teams[0]?.name) === t.name);
                 return (
                   <View key={t.id} style={{ width: COL_WIDTH, paddingHorizontal: 8, paddingVertical: 10, borderRightWidth: 1, borderRightColor: '#e0e8f0', backgroundColor: '#f8fafc' }}>
-                    <Text style={{ fontWeight: 'bold', color: '#002a54', fontSize: 13 }}>🚐 {t.name}</Text>
+                    <Text style={{ fontWeight: 'bold', color: '#7A4B56', fontSize: 13 }}>🚐 {t.name}</Text>
                     {t.members ? <Text style={{ fontSize: 11, color: '#888', marginTop: 2 }}>👥 {t.members}</Text> : null}
-                    <Text style={{ fontSize: 11, color: '#4a9b40', marginTop: 2, fontWeight: 'bold' }}>{teamApps.length} cita{teamApps.length !== 1 ? 's' : ''}</Text>
+                    <Text style={{ fontSize: 11, color: '#D48A9A', marginTop: 2, fontWeight: 'bold' }}>{teamApps.length} cita{teamApps.length !== 1 ? 's' : ''}</Text>
                   </View>
                 );
               })}
@@ -1025,7 +1025,7 @@ export default function CalendarScreen({ route, navigation }: any) {
 
                       {/* Bloque de media hora */}
                       {HOUR_LINES.map(h => (
-                        <View key={`h-${h}`} style={{ position: 'absolute', top: (h - START_HOUR) * 60 * PX_PER_MIN + 30 * PX_PER_MIN, left: 0, right: 0, height: 1, backgroundColor: '#f0f4f8', borderStyle: 'dashed' }} />
+                        <View key={`h-${h}`} style={{ position: 'absolute', top: (h - START_HOUR) * 60 * PX_PER_MIN + 30 * PX_PER_MIN, left: 0, right: 0, height: 1, backgroundColor: '#FDF9fa', borderStyle: 'dashed' }} />
                       ))}
 
                       {/* Citas posicionadas */}
@@ -1148,7 +1148,7 @@ export default function CalendarScreen({ route, navigation }: any) {
                     
                     {uploadingPhotos[selectedAppointment.id] ? (
                       <View style={styles.uploadingBox}>
-                        <ActivityIndicator size="small" color="#4a9b40" />
+                        <ActivityIndicator size="small" color="#D48A9A" />
                       </View>
                     ) : (
                       <TouchableOpacity 
@@ -1302,7 +1302,7 @@ export default function CalendarScreen({ route, navigation }: any) {
                 </Text>
                 
                 <View style={{ backgroundColor: '#f9f9f9', padding: 15, borderRadius: 8, borderWidth: 1, borderColor: '#eee', marginBottom: 20 }}>
-                  <Text style={{ fontWeight: 'bold', fontSize: 14, color: '#002a54' }}>Cita de {optimizationSuggestions[0].clientName}</Text>
+                  <Text style={{ fontWeight: 'bold', fontSize: 14, color: '#7A4B56' }}>Cita de {optimizationSuggestions[0].clientName}</Text>
                   <Text style={{ color: '#666', marginTop: 4 }}>Hora: {optimizationSuggestions[0].time}</Text>
                   
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 10 }}>
@@ -1311,8 +1311,8 @@ export default function CalendarScreen({ route, navigation }: any) {
                       <Text style={{ fontSize: 13, fontWeight: 'bold' }}>{optimizationSuggestions[0].fromTeam}</Text>
                     </View>
                     <Text>➡️</Text>
-                    <View style={{ flex: 1, backgroundColor: '#eaf5ea', padding: 8, borderRadius: 6, alignItems: 'center' }}>
-                      <Text style={{ fontSize: 12, color: '#4a9b40', fontWeight: 'bold' }}>Pasar a</Text>
+                    <View style={{ flex: 1, backgroundColor: '#FFF5F7', padding: 8, borderRadius: 6, alignItems: 'center' }}>
+                      <Text style={{ fontSize: 12, color: '#D48A9A', fontWeight: 'bold' }}>Pasar a</Text>
                       <Text style={{ fontSize: 13, fontWeight: 'bold' }}>{optimizationSuggestions[0].toTeam}</Text>
                     </View>
                   </View>
@@ -1337,7 +1337,7 @@ export default function CalendarScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0f4f8' },
+  container: { flex: 1, backgroundColor: '#FDF9fa' },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1349,24 +1349,24 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e0e0e0'
   },
   datePickerBtn: {
-    backgroundColor: '#eef4fa',
+    backgroundColor: '#F9F1F3',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#d0e0f0'
   },
-  datePickerText: { color: '#002a54', fontWeight: 'bold', fontSize: 15 },
+  datePickerText: { color: '#7A4B56', fontWeight: 'bold', fontSize: 15 },
   topActions: { flexDirection: 'row', gap: 8 },
   manageTeamsBtn: {
-    backgroundColor: '#002a54',
+    backgroundColor: '#7A4B56',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8
   },
   manageTeamsText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
   newApptBtn: {
-    backgroundColor: '#4a9b40',
+    backgroundColor: '#D48A9A',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8
@@ -1387,7 +1387,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginRight: 15,
     borderWidth: 1,
-    borderColor: '#dbe2ea',
+    borderColor: '#EADDE0',
     elevation: 2,
     shadowColor: '#000',
     shadowOpacity: 0.05,
@@ -1402,14 +1402,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    backgroundColor: '#002a54',
+    backgroundColor: '#7A4B56',
     borderTopLeftRadius: 9,
     borderTopRightRadius: 9
   },
   teamTitle: { color: '#ffffff', fontWeight: 'bold', fontSize: 16 },
-  teamHeaderSubtitle: { color: '#b0cbe8', fontSize: 12, marginTop: 2 },
+  teamHeaderSubtitle: { color: '#C9A3AD', fontSize: 12, marginTop: 2 },
   teamCountBadge: {
-    backgroundColor: '#4a9b40',
+    backgroundColor: '#D48A9A',
     color: '#ffffff',
     fontWeight: 'bold',
     fontSize: 12,
@@ -1417,16 +1417,16 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 12
   },
-  infoToggleText: { color: '#b0cbe8', fontSize: 11, textDecorationLine: 'underline', marginTop: 2 },
+  infoToggleText: { color: '#C9A3AD', fontSize: 11, textDecorationLine: 'underline', marginTop: 2 },
   teamInfoBox: {
-    backgroundColor: '#f4f8fc',
+    backgroundColor: '#FDF9fa',
     padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#dbe2ea',
+    borderBottomColor: '#EADDE0',
     gap: 3
   },
   teamInfoItem: { fontSize: 12, color: '#333' },
-  infoBold: { fontWeight: 'bold', color: '#002a54' },
+  infoBold: { fontWeight: 'bold', color: '#7A4B56' },
   columnBody: { padding: 12, flex: 1 },
   card: {
     backgroundColor: '#fbfcfd',
@@ -1434,29 +1434,29 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     borderLeftWidth: 4,
-    borderLeftColor: '#002a54',
+    borderLeftColor: '#7A4B56',
     borderWidth: 1,
-    borderColor: '#e8edf2'
+    borderColor: '#F2E8EB'
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
-  time: { fontWeight: 'bold', color: '#002a54', fontSize: 15 },
-  service: { color: '#4a9b40', fontWeight: 'bold', fontSize: 13, marginTop: 2 },
+  time: { fontWeight: 'bold', color: '#7A4B56', fontSize: 15 },
+  service: { color: '#D48A9A', fontWeight: 'bold', fontSize: 13, marginTop: 2 },
   deleteIcon: { fontSize: 16, padding: 4 },
   clientRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, flexWrap: 'wrap', gap: 6 },
   client: { fontSize: 14, color: '#333', fontWeight: 'bold' },
-  phoneBadge: { backgroundColor: '#eef7ee', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, borderWidth: 1, borderColor: '#c5e6c5' },
-  phoneText: { color: '#256320', fontWeight: 'bold', fontSize: 12 },
-  chatBadge: { backgroundColor: '#e8f5e9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, borderWidth: 1, borderColor: '#a5d6a7' },
-  chatText: { color: '#2e7d32', fontWeight: 'bold', fontSize: 12 },
+  phoneBadge: { backgroundColor: '#FFF5F7', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, borderWidth: 1, borderColor: '#F5D6DD' },
+  phoneText: { color: '#7A4B56', fontWeight: 'bold', fontSize: 12 },
+  chatBadge: { backgroundColor: '#FFF5F7', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, borderWidth: 1, borderColor: '#E8CED4' },
+  chatText: { color: '#7A4B56', fontWeight: 'bold', fontSize: 12 },
   priceContainer: {
-    backgroundColor: '#eaf5ea',
+    backgroundColor: '#FFF5F7',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
     alignSelf: 'flex-start',
     marginBottom: 8
   },
-  priceText: { color: '#2d6a26', fontWeight: 'bold', fontSize: 13 },
+  priceText: { color: '#7A4B56', fontWeight: 'bold', fontSize: 13 },
   conflictBanner: {
     backgroundColor: '#ffe5e5',
     padding: 8,
@@ -1474,7 +1474,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#d0d7de'
   },
-  mapButtonText: { color: '#002a54', fontWeight: 'bold', fontSize: 13 },
+  mapButtonText: { color: '#7A4B56', fontWeight: 'bold', fontSize: 13 },
   detailedInfoBox: {
     backgroundColor: '#fff8e7',
     borderWidth: 1,
@@ -1491,21 +1491,21 @@ const styles = StyleSheet.create({
   // Estilos del Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 15 },
   modalCard: { width: '100%', maxWidth: 500, backgroundColor: '#fff', borderRadius: 12, padding: 20, elevation: 5 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#002a54', marginBottom: 4 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#7A4B56', marginBottom: 4 },
   modalSubtitle: { fontSize: 13, color: '#666', marginBottom: 12 },
   modalInput: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, marginBottom: 8, backgroundColor: '#fafafa' },
-  saveTeamBtn: { flex: 1, backgroundColor: '#4a9b40', paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
+  saveTeamBtn: { flex: 1, backgroundColor: '#D48A9A', paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
   saveTeamBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
   cancelEditBtn: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#d9534f', paddingHorizontal: 15, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
   cancelEditBtnText: { color: '#d9534f', fontWeight: 'bold', fontSize: 14 },
-  teamListTitle: { fontSize: 15, fontWeight: 'bold', color: '#002a54', marginTop: 18, marginBottom: 8 },
+  teamListTitle: { fontSize: 15, fontWeight: 'bold', color: '#7A4B56', marginTop: 18, marginBottom: 8 },
   teamCardItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, backgroundColor: '#f7f9fb', borderRadius: 8, marginBottom: 8, borderWidth: 1, borderColor: '#e3ebf2' },
-  teamItemTitle: { fontSize: 15, fontWeight: 'bold', color: '#002a54' },
+  teamItemTitle: { fontSize: 15, fontWeight: 'bold', color: '#7A4B56' },
   teamItemSub: { fontSize: 12, color: '#555', marginTop: 2 },
   teamItemActions: { flexDirection: 'row', gap: 6 },
   iconBtn: { padding: 6, backgroundColor: '#fff', borderRadius: 6, borderWidth: 1, borderColor: '#ddd' },
   iconBtnText: { fontSize: 14 },
-  closeModalBtn: { backgroundColor: '#002a54', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 15 },
+  closeModalBtn: { backgroundColor: '#7A4B56', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 15 },
   closeModalBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
   
   // Estilos WhatsApp
@@ -1537,47 +1537,47 @@ const styles = StyleSheet.create({
   
   // Estilos de Fotografías
   photosSection: { marginTop: 12, borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 10 },
-  photosTitle: { fontSize: 13, fontWeight: 'bold', color: '#002a54', marginBottom: 8 },
+  photosTitle: { fontSize: 13, fontWeight: 'bold', color: '#7A4B56', marginBottom: 8 },
   photosRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   thumbnailImg: { width: 60, height: 60, borderRadius: 8, borderWidth: 1, borderColor: '#ddd' },
   uploadingBox: { width: 60, height: 60, borderRadius: 8, backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' },
-  addPhotoBtn: { width: 60, height: 60, borderRadius: 8, backgroundColor: '#eef7ee', borderWidth: 1, borderColor: '#c5e6c5', justifyContent: 'center', alignItems: 'center', borderStyle: 'dashed' },
-  addPhotoBtnText: { fontSize: 24, color: '#4a9b40' },
+  addPhotoBtn: { width: 60, height: 60, borderRadius: 8, backgroundColor: '#FFF5F7', borderWidth: 1, borderColor: '#F5D6DD', justifyContent: 'center', alignItems: 'center', borderStyle: 'dashed' },
+  addPhotoBtnText: { fontSize: 24, color: '#D48A9A' },
 
   // Estilos del nuevo Modal de Detalles
   cardMiniIndicators: { flexDirection: 'row', gap: 5, marginTop: 8 },
-  miniIcon: { fontSize: 13, backgroundColor: '#f0f4f8', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden' },
+  miniIcon: { fontSize: 13, backgroundColor: '#FDF9fa', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden' },
   detailsModalCard: { width: '100%', maxWidth: 450, backgroundColor: '#fff', borderRadius: 12, padding: 20, elevation: 5 },
   detailsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15, borderBottomWidth: 1, borderBottomColor: '#eee', paddingBottom: 10 },
-  detailsTime: { fontSize: 18, fontWeight: 'bold', color: '#002a54' },
-  detailsService: { fontSize: 15, color: '#4a9b40', fontWeight: 'bold', marginTop: 4 },
+  detailsTime: { fontSize: 18, fontWeight: 'bold', color: '#7A4B56' },
+  detailsService: { fontSize: 15, color: '#D48A9A', fontWeight: 'bold', marginTop: 4 },
   closeDetailsBtn: { backgroundColor: '#f0f0f0', width: 30, height: 30, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
   closeDetailsBtnText: { fontSize: 16, fontWeight: 'bold', color: '#555' },
   
   // Estilos de Estados
-  cardInProgress: { borderLeftColor: '#3498db', backgroundColor: '#ebf5fb' },
-  cardCompleted: { borderLeftColor: '#2ecc71', backgroundColor: '#eafaf1', opacity: 0.85 },
+  cardInProgress: { borderLeftColor: '#D48A9A', backgroundColor: '#F9F1F3' },
+  cardCompleted: { borderLeftColor: '#D48A9A', backgroundColor: '#FFF5F7', opacity: 0.85 },
   delayBadge: { backgroundColor: '#ffe5e5', color: '#d9534f', fontSize: 12, fontWeight: 'bold', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10, overflow: 'hidden' },
   
   statusActionRow: { flexDirection: 'row', marginTop: 20, gap: 10 },
-  startApptBtn: { flex: 1, backgroundColor: '#3498db', paddingVertical: 14, borderRadius: 8, alignItems: 'center', elevation: 1 },
+  startApptBtn: { flex: 1, backgroundColor: '#D48A9A', paddingVertical: 14, borderRadius: 8, alignItems: 'center', elevation: 1 },
   startApptBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
   
   // Cabecera superior
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
   dateSelector: { flexDirection: 'row', alignItems: 'center' },
-  dateText: { fontSize: 18, fontWeight: 'bold', color: '#002a54' },
+  dateText: { fontSize: 18, fontWeight: 'bold', color: '#7A4B56' },
   headerControls: { flexDirection: 'row', gap: 10, alignItems: 'center' },
   optimizerBtn: { backgroundColor: '#f39c12', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6 },
   optimizerBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
-  manageTeamsBtn: { backgroundColor: '#eef4fa', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6, borderWidth: 1, borderColor: '#cfe0f2' },
-  manageTeamsText: { color: '#002a54', fontWeight: 'bold', fontSize: 13 },
-  newApptBtn: { backgroundColor: '#002a54', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 6 },
+  manageTeamsBtn: { backgroundColor: '#F9F1F3', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6, borderWidth: 1, borderColor: '#E8CED4' },
+  manageTeamsText: { color: '#7A4B56', fontWeight: 'bold', fontSize: 13 },
+  newApptBtn: { backgroundColor: '#7A4B56', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 6 },
   newApptText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-  completeApptBtn: { flex: 1, backgroundColor: '#2ecc71', paddingVertical: 14, borderRadius: 8, alignItems: 'center', elevation: 1 },
+  completeApptBtn: { flex: 1, backgroundColor: '#D48A9A', paddingVertical: 14, borderRadius: 8, alignItems: 'center', elevation: 1 },
   completeApptBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
-  completedBadge: { flex: 1, backgroundColor: '#eafaf1', paddingVertical: 14, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#2ecc71' },
-  completedBadgeText: { color: '#256320', fontWeight: 'bold', fontSize: 16 },
+  completedBadge: { flex: 1, backgroundColor: '#FFF5F7', paddingVertical: 14, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#D48A9A' },
+  completedBadgeText: { color: '#7A4B56', fontWeight: 'bold', fontSize: 16 },
   reviewBtn: { backgroundColor: '#fff', borderWidth: 2, borderColor: '#fbbc05', padding: 12, borderRadius: 8, alignItems: 'center' },
   reviewBtnSent: { backgroundColor: '#fff', borderColor: '#d3d3d3', borderWidth: 1 },
   reviewBtnText: { color: '#fbbc05', fontWeight: 'bold', fontSize: 15 },
@@ -1590,25 +1590,25 @@ const styles = StyleSheet.create({
   invoiceBtnText: { color: '#b45309', fontWeight: 'bold', fontSize: 14 },
 
   // Toggle de vista Día / Mes
-  viewToggle: { flexDirection: 'row', backgroundColor: '#eef4fa', borderRadius: 8, borderWidth: 1, borderColor: '#cfe0f2', overflow: 'hidden' },
+  viewToggle: { flexDirection: 'row', backgroundColor: '#F9F1F3', borderRadius: 8, borderWidth: 1, borderColor: '#E8CED4', overflow: 'hidden' },
   viewToggleBtn: { paddingHorizontal: 12, paddingVertical: 7 },
-  viewToggleBtnActive: { backgroundColor: '#002a54' },
-  viewToggleText: { fontSize: 13, fontWeight: 'bold', color: '#002a54' },
+  viewToggleBtnActive: { backgroundColor: '#7A4B56' },
+  viewToggleText: { fontSize: 13, fontWeight: 'bold', color: '#7A4B56' },
   viewToggleTextActive: { color: '#fff' },
 
   // Vista Mensual
   monthNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  monthNavBtn: { padding: 8, backgroundColor: '#eef4fa', borderRadius: 8, borderWidth: 1, borderColor: '#cfe0f2' },
-  monthNavArrow: { fontSize: 22, color: '#002a54', fontWeight: 'bold', lineHeight: 24 },
-  monthNavTitle: { fontSize: 20, fontWeight: 'bold', color: '#002a54' },
+  monthNavBtn: { padding: 8, backgroundColor: '#F9F1F3', borderRadius: 8, borderWidth: 1, borderColor: '#E8CED4' },
+  monthNavArrow: { fontSize: 22, color: '#7A4B56', fontWeight: 'bold', lineHeight: 24 },
+  monthNavTitle: { fontSize: 20, fontWeight: 'bold', color: '#7A4B56' },
   monthWeekHeader: { flexDirection: 'row', marginBottom: 4 },
   monthWeekDay: { flex: 1, textAlign: 'center', fontSize: 12, fontWeight: 'bold', color: '#888', paddingVertical: 6 },
   monthGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   monthCell: { width: `${100/7}%` as any, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', padding: 2, borderRadius: 8, marginBottom: 2 },
-  monthCellToday: { backgroundColor: '#eef4fa', borderWidth: 1, borderColor: '#4a9b40' },
-  monthCellSelected: { backgroundColor: '#002a54' },
-  monthDayNum: { fontSize: 15, fontWeight: '600', color: '#002a54' },
-  monthDayNumToday: { color: '#4a9b40', fontWeight: 'bold' },
+  monthCellToday: { backgroundColor: '#F9F1F3', borderWidth: 1, borderColor: '#D48A9A' },
+  monthCellSelected: { backgroundColor: '#7A4B56' },
+  monthDayNum: { fontSize: 15, fontWeight: '600', color: '#7A4B56' },
+  monthDayNumToday: { color: '#D48A9A', fontWeight: 'bold' },
   monthDayNumSelected: { color: '#fff', fontWeight: 'bold' },
   monthDots: { flexDirection: 'row', gap: 2, marginTop: 2, flexWrap: 'wrap', justifyContent: 'center' },
   monthDot: { width: 6, height: 6, borderRadius: 3 },
@@ -1618,9 +1618,9 @@ const styles = StyleSheet.create({
   legendDot: { width: 10, height: 10, borderRadius: 5 },
   legendText: { fontSize: 12, color: '#666' },
   monthSummary: { backgroundColor: '#fff', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#e0e8f0', marginTop: 4 },
-  monthSummaryTitle: { fontSize: 15, fontWeight: 'bold', color: '#002a54', marginBottom: 12 },
+  monthSummaryTitle: { fontSize: 15, fontWeight: 'bold', color: '#7A4B56', marginBottom: 12 },
   monthSummaryRow: { flexDirection: 'row', justifyContent: 'space-around' },
   monthSummaryKpi: { alignItems: 'center' },
-  monthSummaryNum: { fontSize: 28, fontWeight: 'bold', color: '#002a54' },
+  monthSummaryNum: { fontSize: 28, fontWeight: 'bold', color: '#7A4B56' },
   monthSummaryLabel: { fontSize: 12, color: '#888', marginTop: 2 },
 });

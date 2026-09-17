@@ -139,7 +139,7 @@ export default function ServicesScreen() {
 
       <Text style={styles.titleList}>Servicios Disponibles ({services.length})</Text>
       {loading ? (
-        <ActivityIndicator size="large" color="#4a9b40" />
+        <ActivityIndicator size="large" color="#D48A9A" />
       ) : (
         <FlatList
           data={services}
@@ -172,25 +172,25 @@ export default function ServicesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#f9f9f9' },
-  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, color: '#002a54' },
-  titleList: { fontSize: 18, fontWeight: 'bold', marginTop: 25, marginBottom: 15, color: '#002a54' },
+  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, color: '#7A4B56' },
+  titleList: { fontSize: 18, fontWeight: 'bold', marginTop: 25, marginBottom: 15, color: '#7A4B56' },
   input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', padding: 12, borderRadius: 8, marginBottom: 12, fontSize: 15 },
   actionRow: { flexDirection: 'row', gap: 10 },
   button: { flex: 1, padding: 14, borderRadius: 8, alignItems: 'center' },
-  buttonAdd: { backgroundColor: '#4a9b40' },
-  buttonEdit: { backgroundColor: '#002a54' },
+  buttonAdd: { backgroundColor: '#D48A9A' },
+  buttonEdit: { backgroundColor: '#7A4B56' },
   buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   cancelBtn: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#d9534f', padding: 14, borderRadius: 8, alignItems: 'center', width: 100 },
   cancelBtnText: { color: '#d9534f', fontWeight: 'bold', fontSize: 15 },
   serviceCard: { backgroundColor: '#fff', padding: 15, borderRadius: 8, marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 1, borderWidth: 1, borderColor: '#e0e0e0' },
-  serviceCardEditing: { borderColor: '#002a54', borderWidth: 2, backgroundColor: '#f0f7ff' },
+  serviceCardEditing: { borderColor: '#7A4B56', borderWidth: 2, backgroundColor: '#f0f7ff' },
   serviceInfo: { flex: 1 },
-  serviceName: { fontSize: 16, fontWeight: 'bold', color: '#002a54', marginBottom: 4 },
+  serviceName: { fontSize: 16, fontWeight: 'bold', color: '#7A4B56', marginBottom: 4 },
   badgeRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
-  serviceDuration: { color: '#4a9b40', fontWeight: 'bold', fontSize: 14 },
-  servicePrice: { color: '#002a54', fontWeight: 'bold', fontSize: 14, backgroundColor: '#eef4fa', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  serviceDuration: { color: '#D48A9A', fontWeight: 'bold', fontSize: 14 },
+  servicePrice: { color: '#7A4B56', fontWeight: 'bold', fontSize: 14, backgroundColor: '#F9F1F3', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
   cardActions: { flexDirection: 'row', gap: 8 },
-  iconBtn: { padding: 8, borderRadius: 6, backgroundColor: '#f0f4f8' },
+  iconBtn: { padding: 8, borderRadius: 6, backgroundColor: '#FDF9fa' },
   actionIcon: { fontSize: 16 },
   empty: { color: '#888', fontStyle: 'italic', textAlign: 'center', marginTop: 20 }
 });
