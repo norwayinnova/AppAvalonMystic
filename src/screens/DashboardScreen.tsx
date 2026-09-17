@@ -18,8 +18,16 @@ const getStartOfMonth = (date: Date) => {
   return d;
 };
 
+const getStartOfYear = (date: Date) => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setMonth(0, 1);
+  return d;
+};
+
 export default function DashboardScreen() {
   const [appointments, setAppointments] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [adminConfig, setAdminConfig] = useState({ pin: '1234', pinEnabled: true });
@@ -28,13 +36,19 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     const qApps = query(collection(db, 'appointments'));
-    const unsub = onSnapshot(qApps, (snapshot) => {
+    const unsubApps = onSnapshot(qApps, (snapshot) => {
       const list: any[] = [];
       snapshot.forEach(docSnap => list.push({ id: docSnap.id, ...docSnap.data() }));
       setAppointments(list);
       setLoading(false);
     });
-    return () => unsub();
+    const qExp = query(collection(db, 'expenses'));
+    const unsubExp = onSnapshot(qExp, (snapshot) => {
+      const list: any[] = [];
+      snapshot.forEach(docSnap => list.push({ id: docSnap.id, ...docSnap.data() }));
+      setExpenses(list);
+    });
+    return () => { unsubApps(); unsubExp(); };
   }, []);
 
   useEffect(() => {
@@ -158,15 +172,19 @@ export default function DashboardScreen() {
     const startOfWeekStr = getStartOfWeek(now).toISOString().split('T')[0];
     const startOfMonthStr = getStartOfMonth(now).toISOString().split('T')[0];
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    const startOfYearStr = getStartOfYear(now).toISOString().split('T')[0];
+    const endOfYearStr = new Date(now.getFullYear(), 11, 31).toISOString().split('T')[0];
+
     const endOfWeek = new Date(getStartOfWeek(now));
     endOfWeek.setDate(endOfWeek.getDate() + 6);
     const endOfWeekStr = endOfWeek.toISOString().split('T')[0];
 
     // Data structures
     const data = {
-      day: { clients: 0, revenue: 0, byTeam: {} as Record<string, { clients: number, revenue: number }> },
-      week: { clients: 0, revenue: 0, byTeam: {} as Record<string, { clients: number, revenue: number }> },
-      month: { clients: 0, revenue: 0, byTeam: {} as Record<string, { clients: number, revenue: number }> }
+      day: { clients: 0, revenue: 0, expenses: 0, cash: 0, bizum: 0, otro: 0, byTeam: {} as Record<string, { clients: number, revenue: number }> },
+      week: { clients: 0, revenue: 0, expenses: 0, cash: 0, bizum: 0, otro: 0, byTeam: {} as Record<string, { clients: number, revenue: number }> },
+      month: { clients: 0, revenue: 0, expenses: 0, cash: 0, bizum: 0, otro: 0, byTeam: {} as Record<string, { clients: number, revenue: number }> },
+      year: { clients: 0, revenue: 0, expenses: 0, cash: 0, bizum: 0, otro: 0, byTeam: {} as Record<string, { clients: number, revenue: number }> }
     };
 
     const pendingPayments: any[] = [];
@@ -177,55 +195,80 @@ export default function DashboardScreen() {
       
       if (app.status === 'cancelled') {
         cancelledAppointments.push(app);
-        return; // No se contabiliza en facturación ni clientes atendidos
+        return; 
       }
 
       const team = app.team || 'Sin asignar';
-      
       let price = 0;
+      let method = '';
       if (app.status === 'completed' && app.paymentStatus === 'paid' && app.finalPrice) {
         price = parseFloat(app.finalPrice) || 0;
+        method = app.paymentMethod || 'otro';
       }
 
-      // Collect pending payments
       if (app.paymentStatus === 'pending') {
         pendingPayments.push(app);
       }
 
-      // Initialize team objects if not present
-      ['day', 'week', 'month'].forEach(period => {
+      ['day', 'week', 'month', 'year'].forEach(period => {
         if (!data[period as keyof typeof data].byTeam[team]) {
           data[period as keyof typeof data].byTeam[team] = { clients: 0, revenue: 0 };
         }
       });
 
-      // Check Day
       if (app.date === todayStr) {
         data.day.clients += 1;
         data.day.revenue += price;
+        if (method === 'cash') data.day.cash += price;
+        else if (method === 'bizum') data.day.bizum += price;
+        else if (method) data.day.otro += price;
         data.day.byTeam[team].clients += 1;
         data.day.byTeam[team].revenue += price;
       }
 
-      // Check Week
       if (app.date >= startOfWeekStr && app.date <= endOfWeekStr) {
         data.week.clients += 1;
         data.week.revenue += price;
+        if (method === 'cash') data.week.cash += price;
+        else if (method === 'bizum') data.week.bizum += price;
+        else if (method) data.week.otro += price;
         data.week.byTeam[team].clients += 1;
         data.week.byTeam[team].revenue += price;
       }
 
-      // Check Month
       if (app.date >= startOfMonthStr && app.date <= endOfMonth) {
         data.month.clients += 1;
         data.month.revenue += price;
+        if (method === 'cash') data.month.cash += price;
+        else if (method === 'bizum') data.month.bizum += price;
+        else if (method) data.month.otro += price;
         data.month.byTeam[team].clients += 1;
         data.month.byTeam[team].revenue += price;
       }
+
+      if (app.date >= startOfYearStr && app.date <= endOfYearStr) {
+        data.year.clients += 1;
+        data.year.revenue += price;
+        if (method === 'cash') data.year.cash += price;
+        else if (method === 'bizum') data.year.bizum += price;
+        else if (method) data.year.otro += price;
+        data.year.byTeam[team].clients += 1;
+        data.year.byTeam[team].revenue += price;
+      }
+    });
+
+    expenses.forEach(exp => {
+      if (!exp.date) return;
+      const amount = parseFloat(exp.amount) || 0;
+      
+      if (exp.date === todayStr) data.day.expenses += amount;
+      if (exp.date >= startOfWeekStr && exp.date <= endOfWeekStr) data.week.expenses += amount;
+      if (exp.date >= startOfMonthStr && exp.date <= endOfMonth) data.month.expenses += amount;
+      if (exp.date >= startOfYearStr && exp.date <= endOfYearStr) data.year.expenses += amount;
     });
 
     return { ...data, pendingPayments, cancelledAppointments };
-  }, [appointments]);
+  }, [appointments, expenses]);
 
   if (loading) {
     return <ActivityIndicator size="large" color="#D48A9A" style={{ flex: 1, justifyContent: 'center' }} />;
@@ -240,15 +283,36 @@ export default function DashboardScreen() {
     return (
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{title}</Text>
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryBox}>
-            <Text style={styles.summaryLabel}>Total Clientes</Text>
+        <View style={[styles.summaryRow, {flexWrap: 'wrap', gap: 10}]}>
+          <View style={[styles.summaryBox, {minWidth: '40%'}]}>
+            <Text style={styles.summaryLabel}>Clientes</Text>
             <Text style={styles.summaryValue}>{periodData.clients}</Text>
           </View>
-          <View style={styles.summaryBox}>
-            <Text style={styles.summaryLabel}>Facturación</Text>
-            <Text style={styles.summaryValue}>{periodData.revenue.toFixed(2)} €</Text>
+          <View style={[styles.summaryBox, {minWidth: '40%'}]}>
+            <Text style={styles.summaryLabel}>Ingresos</Text>
+            <Text style={[styles.summaryValue, {color: '#4a9b40'}]}>+{periodData.revenue.toFixed(2)} €</Text>
+            {(periodData.cash > 0 || periodData.bizum > 0 || periodData.otro > 0) && (
+              <View style={{marginTop: 5}}>
+                {periodData.cash > 0 && <Text style={{fontSize: 11, color: '#666'}}>💵 Efe: {periodData.cash.toFixed(2)}€</Text>}
+                {periodData.bizum > 0 && <Text style={{fontSize: 11, color: '#666'}}>📱 Biz: {periodData.bizum.toFixed(2)}€</Text>}
+                {periodData.otro > 0 && <Text style={{fontSize: 11, color: '#666'}}>💳 Otr: {periodData.otro.toFixed(2)}€</Text>}
+              </View>
+            )}
           </View>
+          {periodData.expenses !== undefined && (
+            <View style={[styles.summaryBox, {minWidth: '40%'}]}>
+              <Text style={styles.summaryLabel}>Gastos</Text>
+              <Text style={[styles.summaryValue, {color: '#e74c3c'}]}>-{periodData.expenses.toFixed(2)} €</Text>
+            </View>
+          )}
+          {periodData.expenses !== undefined && (
+            <View style={[styles.summaryBox, {minWidth: '40%'}]}>
+              <Text style={styles.summaryLabel}>Beneficio Neto</Text>
+              <Text style={[styles.summaryValue, {color: (periodData.revenue - periodData.expenses) >= 0 ? '#4a9b40' : '#e74c3c'}]}>
+                {(periodData.revenue - periodData.expenses) >= 0 ? '+' : ''}{(periodData.revenue - periodData.expenses).toFixed(2)} €
+              </Text>
+            </View>
+          )}
         </View>
         
         <Text style={styles.subtitle}>Desglose por Empleada/Equipo:</Text>
@@ -274,6 +338,7 @@ export default function DashboardScreen() {
       {renderStatCard('Hoy', stats.day)}
       {renderStatCard('Esta Semana', stats.week)}
       {renderStatCard('Este Mes', stats.month)}
+      {renderStatCard('Este Año', stats.year)}
 
       {/* TARJETA DE DEUDAS / PAGOS PENDIENTES */}
       <View style={styles.card}>
