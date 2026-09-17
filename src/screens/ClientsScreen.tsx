@@ -88,13 +88,39 @@ export default function ClientsScreen({ navigation }: any) {
     }
   };
 
-  // Filtrar clientes por nombre o teléfono
-  const filteredClients = clients.filter(c => {
+  // 3. Procesar, filtrar y ordenar clientes
+  const clientsWithStats = clients.map(client => {
+    const clientHistory = appointments.filter(a =>
+      (client.phone && a.phone === client.phone) ||
+      a.client.toLowerCase() === client.name.toLowerCase()
+    );
+
+    const completedCount = clientHistory.filter(a => a.status === 'completed').length;
+    const cancelledCount = clientHistory.filter(a => a.status === 'cancelled').length;
+    
+    const totalSpent = clientHistory.reduce((sum, app) => {
+      if (app.status === 'completed' && app.paymentStatus === 'paid') {
+        const p = parseFloat(app.finalPrice || app.price || '0');
+        return isNaN(p) ? sum : sum + p;
+      }
+      return sum;
+    }, 0);
+
+    return {
+      ...client,
+      clientHistory,
+      completedCount,
+      cancelledCount,
+      totalSpent
+    };
+  });
+
+  const filteredClients = clientsWithStats.filter(c => {
     const term = searchTerm.toLowerCase();
     const matchesName = c.name.toLowerCase().includes(term);
     const matchesPhone = c.phone ? c.phone.includes(term) : false;
     return matchesName || matchesPhone;
-  });
+  }).sort((a, b) => b.completedCount - a.completedCount);
 
   return (
     <View style={styles.container}>
@@ -114,21 +140,10 @@ export default function ClientsScreen({ navigation }: any) {
           data={filteredClients}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => {
-            // Obtener el historial de servicios de este cliente (por teléfono o nombre)
-            const clientHistory = appointments.filter(a =>
-              (item.phone && a.phone === item.phone) ||
-              a.client.toLowerCase() === item.name.toLowerCase()
-            );
-
-            // Calcular importe total acumulado
-            const totalSpent = clientHistory.reduce((sum, app) => {
-              const p = parseFloat(app.price || '0');
-              return isNaN(p) ? sum : sum + p;
-            }, 0);
+            const { clientHistory, completedCount, cancelledCount, totalSpent } = item;
             
-            const cancelledCount = clientHistory.filter(a => a.status === 'cancelled').length;
             const isProblematic = cancelledCount >= 2;
-
+            const isVIP = completedCount >= 10;
             const isExpanded = expandedClientId === item.id;
 
             return (
@@ -137,6 +152,11 @@ export default function ClientsScreen({ navigation }: any) {
                   <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
                     <View>
                       <Text style={styles.clientName}>👤 {item.name}</Text>
+                      {isVIP && (
+                        <Text style={{color: '#f39c12', fontWeight: 'bold', fontSize: 13, marginTop: 2}}>
+                          🏆 Clienta VIP ({completedCount} servicios)
+                        </Text>
+                      )}
                       {isProblematic && (
                         <Text style={{color: '#c0392b', fontWeight: 'bold', fontSize: 12, marginTop: 2}}>
                           ⚠️ Clienta Problemática ({cancelledCount} cancelaciones)
@@ -155,10 +175,13 @@ export default function ClientsScreen({ navigation }: any) {
 
                   <View style={styles.badgeColumn}>
                     <View style={styles.countBadge}>
-                      <Text style={styles.countBadgeText}>{clientHistory.length} servicios</Text>
+                      <Text style={styles.countBadgeText}>{completedCount} serv.</Text>
                     </View>
+                    {cancelledCount > 0 && (
+                      <Text style={{fontSize: 11, color: '#c0392b', marginTop: 4, fontWeight: 'bold', textAlign: 'center'}}>❌ {cancelledCount} canc.</Text>
+                    )}
                     {totalSpent > 0 ? (
-                      <Text style={styles.totalSpentText}>💶 {totalSpent} € total</Text>
+                      <Text style={styles.totalSpentText}>💶 {totalSpent.toFixed(2)} €</Text>
                     ) : null}
                   </View>
                 </View>
