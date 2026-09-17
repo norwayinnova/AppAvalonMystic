@@ -15,6 +15,7 @@ import ExpensesScreen from '../screens/ExpensesScreen';
 import InventoryScreen from '../screens/InventoryScreen';
 import ClientBookingScreen from '../screens/ClientBookingScreen';
 import CalculatorScreen from '../screens/CalculatorScreen';
+import PromotionsScreen from '../screens/PromotionsScreen';
 
 const Tab = createMaterialTopTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -108,6 +109,7 @@ function TopTabs() {
       {(isAdmin || isManagement) && <Tab.Screen name="Services" component={ServicesScreen} options={{ tabBarLabel: '🧹 Servicios' }} />}
       {isAdmin && <Tab.Screen name="Expenses" component={ExpensesScreen} options={{ tabBarLabel: '💸 Gastos' }} />}
       {showAdminOnly && <Tab.Screen name="Calculator" component={CalculatorScreen} options={{ tabBarLabel: '🧮 Calculadora' }} />}
+      {showAdminOnly && <Tab.Screen name="Promotions" component={PromotionsScreen} options={{ tabBarLabel: '📢 Promociones' }} />}
       
       <Tab.Screen name="Inventory" component={InventoryScreen} options={{ tabBarLabel: '📦 Inventario' }} initialParams={{ role, teamName }} />
     </Tab.Navigator>
