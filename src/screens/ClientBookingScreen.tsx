@@ -86,7 +86,17 @@ export default function ClientBookingScreen({ navigation }: any) {
         const hasConflict = teamApps.some(app => {
           const appStart = getMins(app.time);
           const appEnd = appStart + parseInt(app.duration || '60');
-          return (slotStart < appEnd && slotEnd > appStart);
+          const isBloqueo = (app.serviceName && app.serviceName.toLowerCase().includes('bloquead')) || 
+                            (app.client && app.client.toLowerCase().includes('bloquead'));
+
+          if (slotStart < appEnd && slotEnd > appStart) {
+            if (isBloqueo && slotStart < appStart) {
+              // Si es un bloqueo y la cita del cliente empieza antes, se le permite solapar (ignoramos el conflicto)
+              return false;
+            }
+            return true;
+          }
+          return false;
         });
 
         return !hasConflict;

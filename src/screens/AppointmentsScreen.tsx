@@ -201,7 +201,7 @@ export default function AppointmentsScreen({ route, navigation }: any) {
   const checkSlotStatus = (testTime: string) => {
     if (!selectedService) return { conflict: false };
     const currentTeam = team || (teams[0]?.name ?? 'Equipo 1');
-    const teamApps = existingAppointments.filter(a => (a.team || teams[0]?.name || 'Equipo 1') === currentTeam);
+    const teamApps = existingAppointments.filter(a => (a.team || teams[0]?.name || 'Equipo 1') === currentTeam && a.status !== 'cancelled');
 
     const getMinutes = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
     const newStart = getMinutes(testTime);
@@ -209,7 +209,15 @@ export default function AppointmentsScreen({ route, navigation }: any) {
     for (const app of teamApps) {
       const existingStart = getMinutes(app.time);
       const existingEnd = existingStart + parseInt(app.duration);
+      
+      const isBloqueo = app.serviceName.toLowerCase().includes('bloquead') || app.client.toLowerCase().includes('bloquead');
+
       if (newStart < existingEnd && newEnd > existingStart) {
+        if (isBloqueo && newStart < existingStart) {
+          // El usuario ha indicado que un bloqueo no afecta a las horas previas
+          // (ej: si se bloquea a las 14:00, una cita de 60m a las 13:30 sí puede entrar)
+          continue;
+        }
         return { conflict: true, reason: `⚠️ Solapamiento: Ya hay una cita de ${app.time} a ${Math.floor(existingEnd/60).toString().padStart(2,'0')}:${(existingEnd%60).toString().padStart(2,'0')}.` };
       }
     }
@@ -473,8 +481,8 @@ const styles = StyleSheet.create({
   chipSelected: { paddingVertical: 10, paddingHorizontal: 15, backgroundColor: '#7A4B56', borderWidth: 1, borderColor: '#7A4B56', borderRadius: 20, marginRight: 10, justifyContent: 'center' },
   textSelected: { color: '#fff', fontWeight: 'bold' },
   textUnselected: { color: '#333' },
-  chipAvailable: { paddingVertical: 10, paddingHorizontal: 15, backgroundColor: '#FFF5F7', borderWidth: 1, borderColor: '#D48A9A', borderRadius: 20, marginRight: 10, justifyContent: 'center' },
-  textAvailable: { color: '#D48A9A', fontWeight: 'bold' },
+  chipAvailable: { paddingVertical: 10, paddingHorizontal: 15, backgroundColor: '#e6f7e6', borderWidth: 1, borderColor: '#4a9b40', borderRadius: 20, marginRight: 10, justifyContent: 'center' },
+  textAvailable: { color: '#4a9b40', fontWeight: 'bold' },
   chipConflict: { paddingVertical: 10, paddingHorizontal: 15, backgroundColor: '#ffe5e5', borderWidth: 1, borderColor: '#d9534f', borderRadius: 20, marginRight: 10, justifyContent: 'center', opacity: 0.8 },
   textConflict: { color: '#d9534f', textDecorationLine: 'line-through' },
   dropdownBtn: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', padding: 15, borderRadius: 8, marginBottom: 10, alignItems: 'center' },
