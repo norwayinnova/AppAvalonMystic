@@ -179,12 +179,12 @@ export default function DashboardScreen() {
     endOfWeek.setDate(endOfWeek.getDate() + 6);
     const endOfWeekStr = endOfWeek.toISOString().split('T')[0];
 
-    // Data structures
+    const createTeamRecord = () => ({ clients: 0, revenue: 0, pending: 0, cancelled: 0 });
+
     const data = {
-      day: { clients: 0, revenue: 0, expenses: 0, cash: 0, bizum: 0, otro: 0, byTeam: {} as Record<string, { clients: number, revenue: number }> },
-      week: { clients: 0, revenue: 0, expenses: 0, cash: 0, bizum: 0, otro: 0, byTeam: {} as Record<string, { clients: number, revenue: number }> },
-      month: { clients: 0, revenue: 0, expenses: 0, cash: 0, bizum: 0, otro: 0, byTeam: {} as Record<string, { clients: number, revenue: number }> },
-      year: { clients: 0, revenue: 0, expenses: 0, cash: 0, bizum: 0, otro: 0, byTeam: {} as Record<string, { clients: number, revenue: number }> }
+      week: { clients: 0, revenue: 0, expenses: 0, cash: 0, bizum: 0, otro: 0, pending: 0, byTeam: {} as Record<string, ReturnType<typeof createTeamRecord>> },
+      month: { clients: 0, revenue: 0, expenses: 0, cash: 0, bizum: 0, otro: 0, pending: 0, byTeam: {} as Record<string, ReturnType<typeof createTeamRecord>> },
+      year: { clients: 0, revenue: 0, expenses: 0, cash: 0, bizum: 0, otro: 0, pending: 0, byTeam: {} as Record<string, ReturnType<typeof createTeamRecord>> }
     };
 
     const pendingPayments: any[] = [];
@@ -193,75 +193,59 @@ export default function DashboardScreen() {
     appointments.forEach(app => {
       if (!app.date) return;
       
-      if (app.status === 'cancelled') {
-        cancelledAppointments.push(app);
-        return; 
-      }
-
       const team = app.team || 'Sin asignar';
+      let isCancelled = app.status === 'cancelled';
       let price = 0;
+      let pendingVal = 0;
       let method = '';
-      if (app.status === 'completed' && app.paymentStatus === 'paid' && app.finalPrice) {
-        price = parseFloat(app.finalPrice) || 0;
-        method = app.paymentMethod || 'otro';
+
+      if (isCancelled) {
+        cancelledAppointments.push(app);
+      } else {
+        if (app.status === 'completed' && app.paymentStatus === 'paid' && app.finalPrice) {
+          price = parseFloat(app.finalPrice) || 0;
+          method = app.paymentMethod || 'otro';
+        }
+        if (app.paymentStatus === 'pending') {
+          pendingPayments.push(app);
+          pendingVal = parseFloat(app.finalPrice || app.price) || 0;
+        }
       }
 
-      if (app.paymentStatus === 'pending') {
-        pendingPayments.push(app);
-      }
-
-      ['day', 'week', 'month', 'year'].forEach(period => {
+      ['week', 'month', 'year'].forEach(period => {
         if (!data[period as keyof typeof data].byTeam[team]) {
-          data[period as keyof typeof data].byTeam[team] = { clients: 0, revenue: 0 };
+          data[period as keyof typeof data].byTeam[team] = createTeamRecord();
         }
       });
 
-      if (app.date === todayStr) {
-        data.day.clients += 1;
-        data.day.revenue += price;
-        if (method === 'cash') data.day.cash += price;
-        else if (method === 'bizum') data.day.bizum += price;
-        else if (method) data.day.otro += price;
-        data.day.byTeam[team].clients += 1;
-        data.day.byTeam[team].revenue += price;
-      }
+      const applyData = (period: 'week' | 'month' | 'year') => {
+        if (isCancelled) {
+          data[period].byTeam[team].cancelled += 1;
+        } else {
+          data[period].clients += 1;
+          data[period].byTeam[team].clients += 1;
+          
+          data[period].revenue += price;
+          data[period].byTeam[team].revenue += price;
 
-      if (app.date >= startOfWeekStr && app.date <= endOfWeekStr) {
-        data.week.clients += 1;
-        data.week.revenue += price;
-        if (method === 'cash') data.week.cash += price;
-        else if (method === 'bizum') data.week.bizum += price;
-        else if (method) data.week.otro += price;
-        data.week.byTeam[team].clients += 1;
-        data.week.byTeam[team].revenue += price;
-      }
+          data[period].pending += pendingVal;
+          data[period].byTeam[team].pending += pendingVal;
+          
+          if (method === 'cash') data[period].cash += price;
+          else if (method === 'bizum') data[period].bizum += price;
+          else if (method) data[period].otro += price;
+        }
+      };
 
-      if (app.date >= startOfMonthStr && app.date <= endOfMonth) {
-        data.month.clients += 1;
-        data.month.revenue += price;
-        if (method === 'cash') data.month.cash += price;
-        else if (method === 'bizum') data.month.bizum += price;
-        else if (method) data.month.otro += price;
-        data.month.byTeam[team].clients += 1;
-        data.month.byTeam[team].revenue += price;
-      }
-
-      if (app.date >= startOfYearStr && app.date <= endOfYearStr) {
-        data.year.clients += 1;
-        data.year.revenue += price;
-        if (method === 'cash') data.year.cash += price;
-        else if (method === 'bizum') data.year.bizum += price;
-        else if (method) data.year.otro += price;
-        data.year.byTeam[team].clients += 1;
-        data.year.byTeam[team].revenue += price;
-      }
+      if (app.date >= startOfWeekStr && app.date <= endOfWeekStr) applyData('week');
+      if (app.date >= startOfMonthStr && app.date <= endOfMonth) applyData('month');
+      if (app.date >= startOfYearStr && app.date <= endOfYearStr) applyData('year');
     });
 
     expenses.forEach(exp => {
       if (!exp.date) return;
       const amount = parseFloat(exp.amount) || 0;
       
-      if (exp.date === todayStr) data.day.expenses += amount;
       if (exp.date >= startOfWeekStr && exp.date <= endOfWeekStr) data.week.expenses += amount;
       if (exp.date >= startOfMonthStr && exp.date <= endOfMonth) data.month.expenses += amount;
       if (exp.date >= startOfYearStr && exp.date <= endOfYearStr) data.year.expenses += amount;
@@ -277,7 +261,7 @@ export default function DashboardScreen() {
   const renderStatCard = (title: string, periodData: any) => {
     // Filter teams that actually have data for this period to avoid showing 0s
     const activeTeams = Object.keys(periodData.byTeam).filter(
-      team => periodData.byTeam[team].clients > 0 || periodData.byTeam[team].revenue > 0
+      team => periodData.byTeam[team].clients > 0 || periodData.byTeam[team].revenue > 0 || periodData.byTeam[team].cancelled > 0 || periodData.byTeam[team].pending > 0
     );
 
     return (
@@ -285,7 +269,7 @@ export default function DashboardScreen() {
         <Text style={styles.cardTitle}>{title}</Text>
         <View style={[styles.summaryRow, {flexWrap: 'wrap', gap: 10}]}>
           <View style={[styles.summaryBox, {minWidth: '40%'}]}>
-            <Text style={styles.summaryLabel}>Clientes</Text>
+            <Text style={styles.summaryLabel}>Citas</Text>
             <Text style={styles.summaryValue}>{periodData.clients}</Text>
           </View>
           <View style={[styles.summaryBox, {minWidth: '40%'}]}>
@@ -305,11 +289,11 @@ export default function DashboardScreen() {
               <Text style={[styles.summaryValue, {color: '#e74c3c'}]}>-{periodData.expenses.toFixed(2)} €</Text>
             </View>
           )}
-          {periodData.expenses !== undefined && (
+          {periodData.pending !== undefined && (
             <View style={[styles.summaryBox, {minWidth: '40%'}]}>
-              <Text style={styles.summaryLabel}>Beneficio Neto</Text>
-              <Text style={[styles.summaryValue, {color: (periodData.revenue - periodData.expenses) >= 0 ? '#4a9b40' : '#e74c3c'}]}>
-                {(periodData.revenue - periodData.expenses) >= 0 ? '+' : ''}{(periodData.revenue - periodData.expenses).toFixed(2)} €
+              <Text style={styles.summaryLabel}>Pagos Pendientes</Text>
+              <Text style={[styles.summaryValue, {color: '#f39c12'}]}>
+                {periodData.pending.toFixed(2)} €
               </Text>
             </View>
           )}
@@ -319,9 +303,10 @@ export default function DashboardScreen() {
         {activeTeams.map(team => {
           const tData = periodData.byTeam[team];
           return (
-            <View key={team} style={styles.teamRow}>
-              <Text style={styles.teamName}>{team}</Text>
-              <Text style={styles.teamStats}>{tData.clients} citas | {tData.revenue.toFixed(2)} €</Text>
+            <View key={team} style={[styles.teamRow, {flexDirection: 'column', alignItems: 'flex-start'}]}>
+              <Text style={[styles.teamName, {marginBottom: 4}]}>{team}</Text>
+              <Text style={styles.teamStats}>✅ {tData.clients} citas | ❌ {tData.cancelled} canceladas</Text>
+              <Text style={styles.teamStats}>💵 Ingresos: {tData.revenue.toFixed(2)} € | ⏳ Pendiente: {tData.pending.toFixed(2)} €</Text>
             </View>
           );
         })}
@@ -335,7 +320,6 @@ export default function DashboardScreen() {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.mainTitle}>📊 Dashboard Ejecutivo Avalon Mystic</Text>
-      {renderStatCard('Hoy', stats.day)}
       {renderStatCard('Esta Semana', stats.week)}
       {renderStatCard('Este Mes', stats.month)}
       {renderStatCard('Este Año', stats.year)}
