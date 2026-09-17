@@ -39,6 +39,7 @@ const formatHours = (mins: number) => {
 export default function DashboardScreen() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Filtros y Vista
@@ -50,7 +51,8 @@ export default function DashboardScreen() {
     teams: true,
     pending: true,
     cancelled: true,
-    admin: true
+    admin: true,
+    vip: true
   });
 
   // Admin Config
@@ -66,13 +68,21 @@ export default function DashboardScreen() {
       setAppointments(list);
       setLoading(false);
     });
+
     const qExp = query(collection(db, 'expenses'));
     const unsubExp = onSnapshot(qExp, (snapshot) => {
       const list: any[] = [];
       snapshot.forEach(docSnap => list.push({ id: docSnap.id, ...docSnap.data() }));
       setExpenses(list);
     });
-    return () => { unsubApps(); unsubExp(); };
+
+    const qClients = query(collection(db, 'clients'));
+    const unsubClients = onSnapshot(qClients, (snapshot) => {
+      const list: any[] = [];
+      snapshot.forEach(docSnap => list.push({ id: docSnap.id, ...docSnap.data() }));
+      setClients(list);
+    });
+    return () => { unsubApps(); unsubExp(); unsubClients(); };
   }, []);
 
   useEffect(() => {
@@ -200,11 +210,32 @@ export default function DashboardScreen() {
 
     const maxChartValue = Math.max(...chartValues, 1);
 
+    // NUEVOS VIPs: Histórico global (10 citas, 0 canceladas) sin aviso enviado
+    const allAppsByPhone: Record<string, { completed: number, cancelled: number, name: string }> = {};
+    appointments.forEach(app => {
+      const p = (app.phone || '').trim();
+      if (!p || p.length < 6) return;
+      if (!allAppsByPhone[p]) allAppsByPhone[p] = { completed: 0, cancelled: 0, name: app.client || 'Desconocido' };
+      if (app.status === 'completed') allAppsByPhone[p].completed++;
+      if (app.status === 'cancelled') allAppsByPhone[p].cancelled++;
+    });
+
+    const newVips: any[] = [];
+    Object.keys(allAppsByPhone).forEach(p => {
+      const data = allAppsByPhone[p];
+      if (data.completed >= 10 && data.cancelled === 0) {
+        const clientDoc = clients.find(c => c.phone === p);
+        if (!clientDoc || !clientDoc.vipWelcomeMessageSent) {
+          newVips.push({ phone: p, name: data.name, clientId: clientDoc?.id });
+        }
+      }
+    });
+
     return { 
-      revenue, expTotal, clients, pending, cash, bizum, otro, 
-      byTeam, pendingList, cancelledList, chartLabels, chartValues, maxChartValue 
+      revenue, expTotal, clientsCount: clients, pending, cash, bizum, otro, 
+      byTeam, pendingList, cancelledList, chartLabels, chartValues, maxChartValue, newVips
     };
-  }, [appointments, expenses, dateFilter]);
+  }, [appointments, expenses, clients, dateFilter]);
 
   const handleUpdatePin = async () => {
     if (newPin.length !== 4) return alert('El PIN debe tener 4 números.');
@@ -227,6 +258,29 @@ export default function DashboardScreen() {
       setNewManagementPin('');
     } catch (e) {
       alert('Error al guardar el PIN.');
+    }
+  };
+
+  const handleSendVipMessage = async (vipClient: any) => {
+    try {
+      const { doc, setDoc, updateDoc, addDoc } = require('firebase/firestore');
+      if (vipClient.clientId) {
+        await updateDoc(doc(db, 'clients', vipClient.clientId), { vipWelcomeMessageSent: true });
+      } else {
+        await addDoc(collection(db, 'clients'), {
+          name: vipClient.name,
+          phone: vipClient.phone,
+          vipWelcomeMessageSent: true,
+          createdAt: new Date()
+        });
+      }
+
+      const { Linking } = require('react-native');
+      const text = `Enhorabuena ${vipClient.name}, tu confianza en Avalon Mystic te ha convertido en Avalon VIP. ¡Disfruta de un 10% de descuento en tu próxima cita! Desde Avalon Mystic agradecemos tu confianza y deseamos seguir creciendo contigo.`;
+      const url = `https://wa.me/${vipClient.phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
+      Linking.openURL(url).catch(() => alert('No se pudo abrir WhatsApp.'));
+    } catch (e) {
+      alert('Error al registrar el envío VIP.');
     }
   };
 
@@ -314,6 +368,25 @@ export default function DashboardScreen() {
           <Text style={[styles.filterText, dateFilter === 'all' && styles.filterTextActive]}>Todo</Text>
         </TouchableOpacity>
       </View>
+
+      {/* NUEVOS VIPS */}
+      {widgets.vip && stats.newVips.length > 0 && (
+        <View style={[styles.card, { borderColor: '#f1c40f', borderWidth: 2, backgroundColor: '#fff9e6' }]}>
+          <Text style={[styles.cardTitle, { color: '#d35400' }]}>👑 Nuevos Clientes Avalon VIP</Text>
+          <Text style={{ fontSize: 12, color: '#888', marginBottom: 15 }}>Han completado 10 citas sin cancelaciones. ¡Mándales su premio!</Text>
+          {stats.newVips.map((vip: any, index: number) => (
+            <View key={index} style={styles.teamRow}>
+              <View>
+                <Text style={styles.teamName}>👤 {vip.name}</Text>
+                <Text style={{ color: '#555', fontSize: 12 }}>{vip.phone}</Text>
+              </View>
+              <TouchableOpacity style={{ backgroundColor: '#25D366', padding: 8, borderRadius: 6 }} onPress={() => handleSendVipMessage(vip)}>
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>📲 Enviar Descuento</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* MÉTRICAS PRINCIPALES */}
       {widgets.metrics && (
