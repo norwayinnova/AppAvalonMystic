@@ -893,7 +893,7 @@ export default function CalendarScreen({ route, navigation }: any) {
                   ) : null}
                 </View>
                 
-                {isAdmin && (
+                {isStrictAdmin && (
                   <View style={{flexDirection: 'row', gap: 6}}>
                     <TouchableOpacity style={[styles.deleteApptIconBtn, {backgroundColor: '#e74c3c', paddingHorizontal: 12, justifyContent: 'center'}]} onPress={() => cancelAppointment(selectedAppointment.id)}>
                       <Text style={[styles.deleteApptIconBtnText, {fontSize: 12, color: '#fff'}]}>🚫 Cancelar</Text>
