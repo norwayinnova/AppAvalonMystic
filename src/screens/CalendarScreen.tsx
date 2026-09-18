@@ -535,12 +535,6 @@ export default function CalendarScreen({ route, navigation }: any) {
               <Text style={[styles.viewToggleText, calendarView === 'month' && styles.viewToggleTextActive]}>🗓️ Mes</Text>
             </TouchableOpacity>
           </View>
-
-          {isAdmin && (
-            <TouchableOpacity style={styles.optimizerBtn} onPress={analyzeRoutes}>
-              <Text style={styles.optimizerBtnText}>🪄 Optimizar</Text>
-            </TouchableOpacity>
-          )}
           {isAdmin ? (
             <TouchableOpacity style={styles.manageTeamsBtn} onPress={() => setShowTeamsModal(true)}>
               <Text style={styles.manageTeamsText}>👥 Equipos ({teams.length})</Text>
