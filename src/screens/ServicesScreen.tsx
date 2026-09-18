@@ -113,90 +113,86 @@ export default function ServicesScreen() {
     }
   };
 
-  const renderForm = () => (
-    <View style={{ marginBottom: 20 }}>
-      <Text style={styles.title}>
-        {editingId ? '✏️ Modificar Servicio' : '➕ Nuevo Servicio'}
-      </Text>
-      
-      <TextInput
-        style={styles.input}
-        placeholder="Nombre (ej. Limpieza Sofá 3 plazas)"
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Duración estimada en minutos (ej. 90)"
-        keyboardType="numeric"
-        value={duration}
-        onChangeText={setDuration}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Presupuesto base orientativo (€) (opcional)"
-        keyboardType="numeric"
-        value={price}
-        onChangeText={setPrice}
-      />
+  return (
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={{ marginBottom: 20 }}>
+        <Text style={styles.title}>
+          {editingId ? '✏️ Modificar Servicio' : '➕ Nuevo Servicio'}
+        </Text>
+        
+        <TextInput
+          style={styles.input}
+          placeholder="Nombre (ej. Manicura semipermanente)"
+          value={name}
+          onChangeText={setName}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Duración estimada en minutos (ej. 45)"
+          keyboardType="numeric"
+          value={duration}
+          onChangeText={setDuration}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Presupuesto base orientativo (€) (opcional)"
+          keyboardType="numeric"
+          value={price}
+          onChangeText={setPrice}
+        />
 
-      <View style={{ marginBottom: 15 }}>
-        <Text style={{ fontWeight: 'bold', color: '#7A4B56', marginBottom: 5 }}>¿Qué empleadas realizan este servicio?</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-          {teams.map(t => {
-            const isSelected = selectedTeams.includes(t.name);
-            return (
-              <TouchableOpacity 
-                key={t.id} 
-                style={[styles.chip, isSelected && styles.chipSelected]}
-                onPress={() => {
-                  if (isSelected) {
-                    setSelectedTeams(selectedTeams.filter(name => name !== t.name));
-                  } else {
-                    setSelectedTeams([...selectedTeams, t.name]);
-                  }
-                }}
-              >
-                <Text style={isSelected ? styles.chipTextSelected : styles.chipTextUnselected}>
-                  {isSelected ? '✓ ' : ''}{t.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+        <View style={{ marginBottom: 15 }}>
+          <Text style={{ fontWeight: 'bold', color: '#7A4B56', marginBottom: 5 }}>¿Qué empleadas realizan este servicio?</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+            {teams.map(t => {
+              const isSelected = selectedTeams.includes(t.name);
+              return (
+                <TouchableOpacity 
+                  key={t.id} 
+                  style={[styles.chip, isSelected && styles.chipSelected]}
+                  onPress={() => {
+                    if (isSelected) {
+                      setSelectedTeams(selectedTeams.filter(teamName => teamName !== t.name));
+                    } else {
+                      setSelectedTeams([...selectedTeams, t.name]);
+                    }
+                  }}
+                >
+                  <Text style={isSelected ? styles.chipTextSelected : styles.chipTextUnselected}>
+                    {isSelected ? '✓ ' : ''}{t.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        <View style={styles.actionRow}>
+          <TouchableOpacity 
+            style={[styles.button, editingId ? styles.buttonEdit : styles.buttonAdd]} 
+            onPress={saveService}
+          >
+            <Text style={styles.buttonText}>{editingId ? 'Guardar Cambios' : 'Añadir Servicio'}</Text>
+          </TouchableOpacity>
+          
+          {editingId && (
+            <TouchableOpacity style={styles.cancelBtn} onPress={cancelEdit}>
+              <Text style={styles.cancelBtnText}>Cancelar</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
-      <View style={styles.actionRow}>
-        <TouchableOpacity 
-          style={[styles.button, editingId ? styles.buttonEdit : styles.buttonAdd]} 
-          onPress={saveService}
-        >
-          <Text style={styles.buttonText}>{editingId ? 'Guardar Cambios' : 'Añadir Servicio'}</Text>
-        </TouchableOpacity>
-        
-        {editingId && (
-          <TouchableOpacity style={styles.cancelBtn} onPress={cancelEdit}>
-            <Text style={styles.cancelBtnText}>Cancelar</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
       <Text style={styles.titleList}>Servicios Disponibles ({services.length})</Text>
-    </View>
-  );
-
-  return (
-    <View style={styles.container}>
+      
       {loading ? (
         <ActivityIndicator size="large" color="#D48A9A" />
+      ) : services.length === 0 ? (
+        <Text style={styles.empty}>Aún no has añadido ningún servicio.</Text>
       ) : (
-        <FlatList
-          data={services}
-          keyExtractor={(item) => item.id}
-          ListHeaderComponent={renderForm}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <View style={[styles.serviceCard, editingId === item.id && styles.serviceCardEditing]}>
+        <View style={{ paddingBottom: 40 }}>
+          {services.map((item) => (
+            <View key={item.id} style={[styles.serviceCard, editingId === item.id && styles.serviceCardEditing]}>
               <View style={styles.serviceInfo}>
                 <Text style={styles.serviceName}>{item.name}</Text>
                 <View style={styles.badgeRow}>
@@ -213,11 +209,10 @@ export default function ServicesScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-          )}
-          ListEmptyComponent={<Text style={styles.empty}>Aún no has añadido ningún servicio.</Text>}
-        />
+          ))}
+        </View>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
