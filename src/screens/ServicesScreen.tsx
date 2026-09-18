@@ -113,8 +113,8 @@ export default function ServicesScreen() {
     }
   };
 
-  return (
-    <View style={styles.container}>
+  const renderForm = () => (
+    <View style={{ marginBottom: 20 }}>
       <Text style={styles.title}>
         {editingId ? '✏️ Modificar Servicio' : '➕ Nuevo Servicio'}
       </Text>
@@ -158,37 +158,43 @@ export default function ServicesScreen() {
                 }}
               >
                 <Text style={isSelected ? styles.chipTextSelected : styles.chipTextUnselected}>
-                  {isSelected ? '☑️' : '☐'} {t.name}
+                  {isSelected ? '✓ ' : ''}{t.name}
                 </Text>
               </TouchableOpacity>
             );
           })}
         </View>
       </View>
-      
+
       <View style={styles.actionRow}>
+        <TouchableOpacity 
+          style={[styles.button, editingId ? styles.buttonEdit : styles.buttonAdd]} 
+          onPress={saveService}
+        >
+          <Text style={styles.buttonText}>{editingId ? 'Guardar Cambios' : 'Añadir Servicio'}</Text>
+        </TouchableOpacity>
+        
         {editingId && (
           <TouchableOpacity style={styles.cancelBtn} onPress={cancelEdit}>
             <Text style={styles.cancelBtnText}>Cancelar</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity
-          style={[styles.button, editingId ? styles.buttonEdit : styles.buttonAdd]}
-          onPress={saveService}
-        >
-          <Text style={styles.buttonText}>
-            {editingId ? 'Guardar Cambios' : 'Añadir Servicio'}
-          </Text>
-        </TouchableOpacity>
       </View>
 
       <Text style={styles.titleList}>Servicios Disponibles ({services.length})</Text>
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
       {loading ? (
         <ActivityIndicator size="large" color="#D48A9A" />
       ) : (
         <FlatList
           data={services}
           keyExtractor={(item) => item.id}
+          ListHeaderComponent={renderForm}
+          showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <View style={[styles.serviceCard, editingId === item.id && styles.serviceCardEditing]}>
               <View style={styles.serviceInfo}>
