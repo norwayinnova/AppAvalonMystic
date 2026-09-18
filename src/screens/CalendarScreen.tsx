@@ -59,6 +59,8 @@ export default function CalendarScreen({ route, navigation }: any) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [zoomLevel, setZoomLevel] = useState<number>(2); // 2px per min default
+  const [fitToScreen, setFitToScreen] = useState<boolean>(false);
+  const { width: windowWidth, height: windowHeight } = require('react-native').useWindowDimensions();
   
   // Set default team to logged-in team if not admin
   const [filterTeam, setFilterTeam] = useState<string | null>(isAdmin ? null : userTeamName);
@@ -710,12 +712,24 @@ export default function CalendarScreen({ route, navigation }: any) {
         const START_HOUR = 9;      // 09:00
         const END_HOUR = 20.5;     // 20:30
         const TOTAL_MINS = (END_HOUR - START_HOUR) * 60; // 690 min
-        const PX_PER_MIN = zoomLevel; // Utiliza el estado zoomLevel en lugar de un valor fijo
-        const GRID_HEIGHT = TOTAL_MINS * PX_PER_MIN;
         const LABEL_WIDTH = 48;
-        const COL_WIDTH = 180;
-        const HOUR_LINES = Array.from({ length: Math.ceil(END_HOUR - START_HOUR) + 1 }, (_, i) => START_HOUR + i);
         const visibleTeams = teams.filter(t => isAdmin || t.name === userTeamName);
+        
+        let PX_PER_MIN = zoomLevel; 
+        let COL_WIDTH = 180;
+
+        if (fitToScreen) {
+          // Ajustar altura disponible (restando cabeceras aprox: 150px)
+          const availableHeight = Math.max(400, windowHeight - 150);
+          PX_PER_MIN = availableHeight / TOTAL_MINS;
+          
+          // Ajustar ancho disponible (restando columna de horas y márgenes)
+          const availableWidth = Math.max(300, windowWidth - LABEL_WIDTH);
+          COL_WIDTH = availableWidth / Math.max(1, visibleTeams.length);
+        }
+
+        const GRID_HEIGHT = TOTAL_MINS * PX_PER_MIN;
+        const HOUR_LINES = Array.from({ length: Math.ceil(END_HOUR - START_HOUR) + 1 }, (_, i) => START_HOUR + i);
 
         const timeToTop = (time: string) => {
           const [h, m] = time.split(':').map(Number);
@@ -730,7 +744,32 @@ export default function CalendarScreen({ route, navigation }: any) {
         };
 
         return (
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
+            {/* Controles de Zoom y Ajuste */}
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', padding: 8, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee', gap: 10 }}>
+              <TouchableOpacity 
+                onPress={() => setFitToScreen(!fitToScreen)} 
+                style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: fitToScreen ? '#FFF5F7' : '#f0f0f0', borderRadius: 20, borderWidth: 1, borderColor: fitToScreen ? '#D48A9A' : 'transparent' }}
+              >
+                <Text style={{ fontSize: 12, color: fitToScreen ? '#D48A9A' : '#666', fontWeight: fitToScreen ? 'bold' : 'normal' }}>
+                  {fitToScreen ? '🖥️ Ajustado' : '🖥️ Ajustar'}
+                </Text>
+              </TouchableOpacity>
+              
+              {!fitToScreen && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f0f0', borderRadius: 20, paddingHorizontal: 10 }}>
+                  <Text style={{ fontSize: 12, color: '#666', marginRight: 10 }}>🔎 Zoom</Text>
+                  <TouchableOpacity onPress={() => setZoomLevel(Math.max(1, zoomLevel - 0.5))} style={{ padding: 6 }}>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#7A4B56' }}>-</Text>
+                  </TouchableOpacity>
+                  <Text style={{ marginHorizontal: 10, fontWeight: 'bold' }}>{zoomLevel}x</Text>
+                  <TouchableOpacity onPress={() => setZoomLevel(Math.min(5, zoomLevel + 0.5))} style={{ padding: 6 }}>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#7A4B56' }}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+
             {/* FIXED TOP ROW (Sticky vertically, syncs horizontally) */}
             <View style={{ flexDirection: 'row', backgroundColor: '#fff', zIndex: 10, elevation: 4 }}>
               {/* Top Left Corner */}
