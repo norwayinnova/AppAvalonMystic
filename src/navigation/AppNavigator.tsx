@@ -3,7 +3,6 @@ import { Image, View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform }
 import RoleSelectionScreen from '../screens/RoleSelectionScreen';
 import { useAppContext } from '../context/AppContext';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 import CalendarScreen from '../screens/CalendarScreen';
 import AppointmentsScreen from '../screens/AppointmentsScreen';
@@ -18,7 +17,6 @@ import CalculatorScreen from '../screens/CalculatorScreen';
 import PromotionsScreen from '../screens/PromotionsScreen';
 
 const Tab = createMaterialTopTabNavigator();
-const Stack = createNativeStackNavigator();
 
 function LogoTitle() {
   return (
@@ -128,37 +126,57 @@ export default function AppNavigator() {
     }
   }, []);
 
+  const renderContent = () => {
+    if (!role) return <RoleSelectionScreen />;
+    if (role === 'cliente') return <ClientBookingScreen />;
+    return <TopTabs />;
+  };
+
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerStyle: { backgroundColor: '#FFFFFF' },
-          headerTitleAlign: 'center',
-          headerTitle: () => (
-            <View style={{flexDirection: 'row', alignItems: 'center'}}>
-              <LogoTitle />
-            </View>
-          ),
-          headerRight: () => role ? (
-            <TouchableOpacity onPress={logout} style={{marginRight: 15, padding: 6, backgroundColor: 'rgba(233,30,99,0.1)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(233,30,99,0.3)'}}>
-              <Text style={{color: '#D48A9A', fontWeight: 'bold', fontSize: 13}}>Salir 🔒</Text>
+      <View style={{ flex: 1 }}>
+        {/* Header global */}
+        <View style={styles.globalHeader}>
+          <LogoTitle />
+          {role ? (
+            <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
+              <Text style={styles.logoutBtnText}>Salir 🔒</Text>
             </TouchableOpacity>
-          ) : null
-        }}
-      >
-        {!role ? (
-          <Stack.Screen name="Login" component={RoleSelectionScreen} options={{ headerShown: false }} />
-        ) : role === 'cliente' ? (
-          <Stack.Screen name="ClientBooking" component={ClientBookingScreen} options={{ title: 'Reserva Online' }} />
-        ) : (
-          <Stack.Screen name="Main" component={TopTabs} />
-        )}
-      </Stack.Navigator>
+          ) : null}
+        </View>
+        {/* Contenido según rol */}
+        <View style={{ flex: 1 }}>
+          {renderContent()}
+        </View>
+      </View>
     </NavigationContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  globalHeader: {
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    paddingTop: Platform.OS === 'ios' ? 44 : 10,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.08)',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 }
+  },
+  logoutBtn: {
+    padding: 6,
+    backgroundColor: 'rgba(233,30,99,0.1)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(233,30,99,0.3)'
+  },
+  logoutBtnText: { color: '#D48A9A', fontWeight: 'bold', fontSize: 13 },
   logoContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 5 },
   logoImage: { width: 140, height: 40 },
   tabBarWrapper: {
