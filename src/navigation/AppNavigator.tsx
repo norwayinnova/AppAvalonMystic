@@ -1,13 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Image, View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native';
 import RoleSelectionScreen from '../screens/RoleSelectionScreen';
 import { useAppContext } from '../context/AppContext';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { NavigationContainer } from '@react-navigation/native';
 import CalendarScreen from '../screens/CalendarScreen';
 import AppointmentsScreen from '../screens/AppointmentsScreen';
 import ServicesScreen from '../screens/ServicesScreen';
-
 import ClientsScreen from '../screens/ClientsScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import ExpensesScreen from '../screens/ExpensesScreen';
@@ -15,8 +12,6 @@ import InventoryScreen from '../screens/InventoryScreen';
 import ClientBookingScreen from '../screens/ClientBookingScreen';
 import CalculatorScreen from '../screens/CalculatorScreen';
 import PromotionsScreen from '../screens/PromotionsScreen';
-
-const Tab = createMaterialTopTabNavigator();
 
 function LogoTitle() {
   return (
@@ -30,8 +25,7 @@ function LogoTitle() {
   );
 }
 
-// Barra de pestañas adaptable a Móvil y Ordenador (con deslizamiento táctil horizontal)
-function CustomTopTabBar({ state, descriptors, navigation }: any) {
+function CustomTopTabBar({ tabs, activeTab, onTabPress }: { tabs: any[], activeTab: string, onTabPress: (name: string) => void }) {
   return (
     <View style={styles.tabBarWrapper}>
       <ScrollView
@@ -39,33 +33,12 @@ function CustomTopTabBar({ state, descriptors, navigation }: any) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.tabScrollContent}
       >
-        {state.routes.map((route: any, index: number) => {
-          const { options } = descriptors[route.key];
-          const label =
-            options.tabBarLabel !== undefined
-              ? options.tabBarLabel
-              : options.title !== undefined
-              ? options.title
-              : route.name;
-
-          const isFocused = state.index === index;
-
-          const onPress = () => {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
-
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name);
-            }
-          };
-
+        {tabs.map((tab) => {
+          const isFocused = activeTab === tab.name;
           return (
             <TouchableOpacity
-              key={route.key}
-              onPress={onPress}
+              key={tab.name}
+              onPress={() => onTabPress(tab.name)}
               style={[
                 styles.tabButton,
                 isFocused ? styles.tabButtonActive : styles.tabButtonInactive
@@ -77,7 +50,7 @@ function CustomTopTabBar({ state, descriptors, navigation }: any) {
                   isFocused ? styles.tabTextActive : styles.tabTextInactive
                 ]}
               >
-                {label}
+                {tab.label}
               </Text>
             </TouchableOpacity>
           );
@@ -87,30 +60,41 @@ function CustomTopTabBar({ state, descriptors, navigation }: any) {
   );
 }
 
-// ... (keep CustomTopTabBar and styles intact)
-
 function TopTabs() {
   const { role, teamName } = useAppContext();
   const isAdmin = role === 'admin';
   const isManagement = role === 'management';
-  const showAdminOnly = isAdmin; // Solo admin ve Dashboard
+
+  const allTabs = [
+    isAdmin ? { name: 'Dashboard', label: '📊 Dashboard', component: DashboardScreen } : null,
+    { name: 'Calendar', label: '📅 Calendario', component: CalendarScreen },
+    { name: 'Appointments', label: '➕ Nueva Cita', component: AppointmentsScreen },
+    isAdmin ? { name: 'Clients', label: '👥 Clientes', component: ClientsScreen } : null,
+    (isAdmin || isManagement) ? { name: 'Services', label: '💄 Servicios', component: ServicesScreen } : null,
+    isAdmin ? { name: 'Expenses', label: '💸 Gastos', component: ExpensesScreen } : null,
+    isAdmin ? { name: 'Calculator', label: '🧮 Calculadora', component: CalculatorScreen } : null,
+    isAdmin ? { name: 'Promotions', label: '📢 Promociones', component: PromotionsScreen } : null,
+    { name: 'Inventory', label: '📦 Inventario', component: InventoryScreen },
+  ].filter(Boolean) as { name: string; label: string; component: React.ComponentType<any> }[];
+
+  const [activeTab, setActiveTab] = useState(allTabs[0]?.name || 'Calendar');
+
+  // Ensure active tab is always valid when role changes
+  useEffect(() => {
+    if (!allTabs.find(t => t.name === activeTab)) {
+      setActiveTab(allTabs[0]?.name || 'Calendar');
+    }
+  }, [role]);
+
+  const ActiveComponent = allTabs.find(t => t.name === activeTab)?.component;
 
   return (
-    <Tab.Navigator tabBar={(props) => <CustomTopTabBar {...props} />} screenOptions={{ swipeEnabled: false }}>
-      {showAdminOnly && <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ tabBarLabel: '📊 Dashboard' }} />}
-      
-      <Tab.Screen name="Calendar" component={CalendarScreen} options={{ tabBarLabel: '📅 Calendario' }} initialParams={{ role, teamName }} />
-
-      <Tab.Screen name="Appointments" component={AppointmentsScreen} options={{ tabBarLabel: '➕ Nueva Cita' }} initialParams={{ role, teamName }} />
-      
-      {isAdmin && <Tab.Screen name="Clients" component={ClientsScreen} options={{ tabBarLabel: '👥 Clientes' }} />}
-      {(isAdmin || isManagement) && <Tab.Screen name="Services" component={ServicesScreen} options={{ tabBarLabel: '🧹 Servicios' }} />}
-      {isAdmin && <Tab.Screen name="Expenses" component={ExpensesScreen} options={{ tabBarLabel: '💸 Gastos' }} />}
-      {showAdminOnly && <Tab.Screen name="Calculator" component={CalculatorScreen} options={{ tabBarLabel: '🧮 Calculadora' }} />}
-      {showAdminOnly && <Tab.Screen name="Promotions" component={PromotionsScreen} options={{ tabBarLabel: '📢 Promociones' }} />}
-      
-      <Tab.Screen name="Inventory" component={InventoryScreen} options={{ tabBarLabel: '📦 Inventario' }} initialParams={{ role, teamName }} />
-    </Tab.Navigator>
+    <View style={{ flex: 1 }}>
+      <CustomTopTabBar tabs={allTabs} activeTab={activeTab} onTabPress={setActiveTab} />
+      <View style={{ flex: 1 }}>
+        {ActiveComponent && <ActiveComponent route={{ params: { role, teamName } }} navigation={{}} />}
+      </View>
+    </View>
   );
 }
 
@@ -118,7 +102,7 @@ export default function AppNavigator() {
   const { role, logout, loginAsClient } = useAppContext();
 
   useEffect(() => {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const url = window.location.href;
       if (url.includes('?reserva') || url.includes('/reserva')) {
         loginAsClient();
@@ -133,23 +117,21 @@ export default function AppNavigator() {
   };
 
   return (
-    <NavigationContainer>
-      <View style={{ flex: 1 }}>
-        {/* Header global */}
-        <View style={styles.globalHeader}>
-          <LogoTitle />
-          {role ? (
-            <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
-              <Text style={styles.logoutBtnText}>Salir 🔒</Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
-        {/* Contenido según rol */}
-        <View style={{ flex: 1 }}>
-          {renderContent()}
-        </View>
+    <View style={{ flex: 1 }}>
+      {/* Header global */}
+      <View style={styles.globalHeader}>
+        <LogoTitle />
+        {role ? (
+          <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
+            <Text style={styles.logoutBtnText}>Salir 🔒</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
-    </NavigationContainer>
+      {/* Contenido según rol */}
+      <View style={{ flex: 1 }}>
+        {renderContent()}
+      </View>
+    </View>
   );
 }
 
@@ -191,7 +173,7 @@ const styles = StyleSheet.create({
   tabScrollContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    minWidth: '100%',
+    minWidth: '100%' as any,
     justifyContent: 'space-around'
   },
   tabButton: {
@@ -202,24 +184,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 3,
     borderBottomColor: 'transparent'
   },
-  tabButtonActive: {
-    borderBottomColor: '#D48A9A', // Pink accent
-  },
-  tabButtonInactive: {
-    borderBottomColor: 'transparent',
-  },
-  tabText: {
-    fontWeight: 'bold',
-    fontSize: 13,
-    textAlign: 'center'
-  },
-  tabTextActive: {
-    color: '#D48A9A',
-    fontWeight: 'bold',
-  },
-  tabTextInactive: {
-    color: '#888888',
-    fontWeight: '600',
-  }
+  tabButtonActive: { borderBottomColor: '#D48A9A' },
+  tabButtonInactive: { borderBottomColor: 'transparent' },
+  tabText: { fontWeight: 'bold', fontSize: 13, textAlign: 'center' },
+  tabTextActive: { color: '#D48A9A', fontWeight: 'bold' },
+  tabTextInactive: { color: '#888888', fontWeight: '600' },
 });
-
