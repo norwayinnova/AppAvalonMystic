@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Image, View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native';
+import { Image, View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform, Modal } from 'react-native';
 import RoleSelectionScreen from '../screens/RoleSelectionScreen';
 import { useAppContext } from '../context/AppContext';
 import CalendarScreen from '../screens/CalendarScreen';
@@ -26,36 +26,46 @@ function LogoTitle() {
 }
 
 function CustomTopTabBar({ tabs, activeTab, onTabPress }: { tabs: any[], activeTab: string, onTabPress: (name: string) => void }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const activeLabel = tabs.find(t => t.name === activeTab)?.label || 'Menú';
+
   return (
     <View style={styles.tabBarWrapper}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.tabScrollContent}
+      <TouchableOpacity 
+        style={styles.menuSelectorBtn} 
+        onPress={() => setMenuOpen(true)}
       >
-        {tabs.map((tab) => {
-          const isFocused = activeTab === tab.name;
-          return (
-            <TouchableOpacity
-              key={tab.name}
-              onPress={() => onTabPress(tab.name)}
-              style={[
-                styles.tabButton,
-                isFocused ? styles.tabButtonActive : styles.tabButtonInactive
-              ]}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  isFocused ? styles.tabTextActive : styles.tabTextInactive
-                ]}
-              >
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+        <Text style={styles.menuSelectorText}>{activeLabel}</Text>
+        <Text style={styles.menuSelectorIcon}>▼</Text>
+      </TouchableOpacity>
+
+      <Modal
+        visible={menuOpen}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setMenuOpen(false)}
+      >
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setMenuOpen(false)}>
+          <View style={styles.menuDropdown}>
+            <ScrollView style={{maxHeight: 400}}>
+              {tabs.map((tab) => (
+                <TouchableOpacity
+                  key={tab.name}
+                  style={[styles.menuItem, activeTab === tab.name && styles.menuItemActive]}
+                  onPress={() => {
+                    onTabPress(tab.name);
+                    setMenuOpen(false);
+                  }}
+                >
+                  <Text style={[styles.menuItemText, activeTab === tab.name && styles.menuItemTextActive]}>
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -170,23 +180,58 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 3 }
   },
-  tabScrollContent: {
+  menuSelectorBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    minWidth: '100%' as any,
-    justifyContent: 'space-around'
-  },
-  tabButton: {
-    paddingVertical: 13,
-    paddingHorizontal: 16,
-    alignItems: 'center',
     justifyContent: 'center',
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent'
+    paddingVertical: 14,
+    backgroundColor: '#fff',
   },
-  tabButtonActive: { borderBottomColor: '#D48A9A' },
-  tabButtonInactive: { borderBottomColor: 'transparent' },
-  tabText: { fontWeight: 'bold', fontSize: 13, textAlign: 'center' },
-  tabTextActive: { color: '#D48A9A', fontWeight: 'bold' },
-  tabTextInactive: { color: '#888888', fontWeight: '600' },
+  menuSelectorText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#D48A9A',
+    marginRight: 8,
+  },
+  menuSelectorIcon: {
+    fontSize: 12,
+    color: '#D48A9A',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
+  menuDropdown: {
+    backgroundColor: '#fff',
+    width: '90%',
+    maxWidth: 400,
+    marginTop: Platform.OS === 'ios' ? 100 : 80, // Positioned below header
+    borderRadius: 12,
+    padding: 10,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  menuItem: {
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  menuItemActive: {
+    backgroundColor: 'rgba(212,138,154,0.1)',
+    borderRadius: 8,
+    borderBottomWidth: 0,
+  },
+  menuItemText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  menuItemTextActive: {
+    color: '#D48A9A',
+    fontWeight: 'bold',
+  },
 });
