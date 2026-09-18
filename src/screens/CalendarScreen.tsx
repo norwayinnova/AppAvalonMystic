@@ -58,6 +58,7 @@ export default function CalendarScreen({ route, navigation }: any) {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
+  const [zoomLevel, setZoomLevel] = useState<number>(2); // 2px per min default
   
   // Set default team to logged-in team if not admin
   const [filterTeam, setFilterTeam] = useState<string | null>(isAdmin ? null : userTeamName);
@@ -715,7 +716,7 @@ export default function CalendarScreen({ route, navigation }: any) {
         const START_HOUR = 9;      // 09:00
         const END_HOUR = 20.5;     // 20:30
         const TOTAL_MINS = (END_HOUR - START_HOUR) * 60; // 690 min
-        const PX_PER_MIN = 2;      // 2px por minuto → cada hora = 120px
+        const PX_PER_MIN = zoomLevel; // Utiliza el estado zoomLevel en lugar de un valor fijo
         const GRID_HEIGHT = TOTAL_MINS * PX_PER_MIN;
         const LABEL_WIDTH = 48;
         const COL_WIDTH = 180;
