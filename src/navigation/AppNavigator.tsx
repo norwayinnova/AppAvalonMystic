@@ -98,11 +98,30 @@ function TopTabs() {
 
   const ActiveComponent = allTabs.find(t => t.name === activeTab)?.component;
 
+  const [activeParams, setActiveParams] = useState<any>({});
+
+  const navigate = (screenName: string, params?: any) => {
+    setActiveParams(params || {});
+    setActiveTab(screenName);
+  };
+
   return (
     <View style={{ flex: 1 }}>
-      <CustomTopTabBar tabs={allTabs} activeTab={activeTab} onTabPress={setActiveTab} />
+      <CustomTopTabBar 
+        tabs={allTabs} 
+        activeTab={activeTab} 
+        onTabPress={(name) => {
+          setActiveParams({});
+          setActiveTab(name);
+        }} 
+      />
       <View style={{ flex: 1 }}>
-        {ActiveComponent && <ActiveComponent route={{ params: { role, teamName } }} navigation={{}} />}
+        {ActiveComponent && (
+          <ActiveComponent 
+            route={{ params: { role, teamName, ...activeParams } }} 
+            navigation={{ navigate }} 
+          />
+        )}
       </View>
     </View>
   );
