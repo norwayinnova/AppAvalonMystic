@@ -180,7 +180,12 @@ export default function CalculatorScreen() {
 
                 <View style={styles.calcColRight}>
                   <Text style={styles.label}>A Pagar (Bizum):</Text>
-                  {isBizumPaid ? (
+                  {pctBizum === 0 ? (
+                    <View style={{alignItems: 'center'}}>
+                      {totalBizumPaid > 0 && <Text style={{fontSize: 12, color: '#888', marginBottom: 4}}>(Pagado hasta ahora: {totalBizumPaid.toFixed(2)}€)</Text>}
+                      <Text style={{fontSize: 12, color: '#e74c3c', fontStyle: 'italic', textAlign: 'center'}}>Pon el % arriba 👆</Text>
+                    </View>
+                  ) : isBizumPaid ? (
                     <View style={{alignItems: 'center'}}>
                       <Text style={[styles.payoutText, {color: '#888'}]}>{totalBizumPaid.toFixed(2)} €</Text>
                       <View style={styles.paidBadge}><Text style={styles.paidBadgeText}>✓ Pagado</Text></View>
@@ -188,7 +193,7 @@ export default function CalculatorScreen() {
                   ) : (
                     <View style={{alignItems: 'center'}}>
                       <Text style={styles.payoutText}>{bizumPayoutStr} €</Text>
-                      {totalBizumPaid > 0 && <Text style={{fontSize: 10, color: '#888', marginBottom: 4}}>(Ya pagado: {totalBizumPaid.toFixed(2)}€)</Text>}
+                      {totalBizumPaid > 0 && <Text style={{fontSize: 10, color: '#888', marginBottom: 4}}>(Falta esto por pagar. Pagado: {totalBizumPaid.toFixed(2)}€)</Text>}
                       <TouchableOpacity style={styles.payBtn} onPress={() => handlePay(team, stats.startStr, bizumPayoutStr, 'bizum', `Bizum Semanal`)}>
                         <Text style={styles.payBtnText}>Marcar Pagado</Text>
                       </TouchableOpacity>
@@ -220,7 +225,12 @@ export default function CalculatorScreen() {
 
                       <View style={styles.calcColRight}>
                         <Text style={styles.label}>A Pagar:</Text>
-                        {isCashPaid ? (
+                        {pctCash === 0 ? (
+                          <View style={{alignItems: 'center'}}>
+                            {totalCashPaid > 0 && <Text style={{fontSize: 12, color: '#888', marginBottom: 4}}>(Pagado hasta ahora: {totalCashPaid.toFixed(2)}€)</Text>}
+                            <Text style={{fontSize: 12, color: '#e74c3c', fontStyle: 'italic', textAlign: 'center'}}>Pon el % arriba 👆</Text>
+                          </View>
+                        ) : isCashPaid ? (
                           <View style={{alignItems: 'center'}}>
                             <Text style={[styles.payoutText, {color: '#888', fontSize: 16}]}>{totalCashPaid.toFixed(2)} €</Text>
                             <View style={styles.paidBadge}><Text style={styles.paidBadgeText}>✓ Pagado</Text></View>
@@ -228,7 +238,7 @@ export default function CalculatorScreen() {
                         ) : (
                           <View style={{alignItems: 'center'}}>
                             <Text style={[styles.payoutText, {fontSize: 16}]}>{cashPayoutStr} €</Text>
-                            {totalCashPaid > 0 && <Text style={{fontSize: 9, color: '#888', marginBottom: 2}}>(Ya pagado: {totalCashPaid.toFixed(2)}€)</Text>}
+                            {totalCashPaid > 0 && <Text style={{fontSize: 9, color: '#888', marginBottom: 2}}>(Falta esto por pagar. Pagado: {totalCashPaid.toFixed(2)}€)</Text>}
                             <TouchableOpacity style={[styles.payBtn, {backgroundColor: '#4a9b40', paddingVertical: 6, paddingHorizontal: 10}]} onPress={() => handlePay(team, stats.startStr, cashPayoutStr, `cash_${dayStr}`, `Efectivo día ${dayStr}`)}>
                               <Text style={[styles.payBtnText, {fontSize: 11}]}>Marcar Pagado</Text>
                             </TouchableOpacity>
