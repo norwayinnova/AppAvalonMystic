@@ -46,6 +46,7 @@ export default function AppointmentsScreen({ route, navigation }: any) {
   const [existingAppointments, setExistingAppointments] = useState<any[]>([]);
   const [smartSuggestion, setSmartSuggestion] = useState<any>(null);
   const [serviceSearch, setServiceSearch] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   // 1. Cargar Equipos dinámicos desde Firestore
   useEffect(() => {
@@ -463,28 +464,37 @@ export default function AppointmentsScreen({ route, navigation }: any) {
               }, {})
           )
           .sort(([catA], [catB]) => catA.localeCompare(catB))
-          .map(([categoryName, catServices]) => (
-            <View key={categoryName} style={{ marginBottom: 10 }}>
-              <Text style={{ fontWeight: 'bold', color: '#333', backgroundColor: '#f0f0f0', padding: 5, borderRadius: 5 }}>
-                📁 {categoryName}
-              </Text>
-              {catServices.map(srv => (
+          .map(([categoryName, catServices]) => {
+            const isExpanded = serviceSearch.length > 0 || expandedCategories[categoryName];
+            return (
+              <View key={categoryName} style={{ marginBottom: 10 }}>
                 <TouchableOpacity 
-                  key={srv.id} 
-                  style={[styles.dropdownItem, selectedService?.id === srv.id && styles.dropdownItemSelected, { paddingLeft: 15 }]}
-                  onPress={() => {
-                    handleSelectService(srv);
-                    setCustomDuration('');
-                    setServiceSearch('');
-                  }}
+                  onPress={() => setExpandedCategories(prev => ({ ...prev, [categoryName]: !prev[categoryName] }))}
+                  style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f0f0f0', padding: 8, borderRadius: 5 }}
                 >
-                  <Text style={[styles.dropdownItemText, selectedService?.id === srv.id && styles.dropdownItemTextSelected]}>
-                    ✨ {srv.name} (⏱ {srv.duration} min)
+                  <Text style={{ fontWeight: 'bold', color: '#333' }}>
+                    📁 {categoryName} ({catServices.length})
                   </Text>
+                  <Text style={{ color: '#666' }}>{isExpanded ? '▲' : '▼'}</Text>
                 </TouchableOpacity>
-              ))}
-            </View>
-          ))}
+                {isExpanded && catServices.map(srv => (
+                  <TouchableOpacity 
+                    key={srv.id} 
+                    style={[styles.dropdownItem, selectedService?.id === srv.id && styles.dropdownItemSelected, { paddingLeft: 15 }]}
+                    onPress={() => {
+                      handleSelectService(srv);
+                      setCustomDuration('');
+                      setServiceSearch('');
+                    }}
+                  >
+                    <Text style={[styles.dropdownItemText, selectedService?.id === srv.id && styles.dropdownItemTextSelected]}>
+                      ✨ {srv.name} (⏱ {srv.duration} min)
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            );
+          })}
           {services.filter(s => s.name.toLowerCase().includes(serviceSearch.toLowerCase())).length === 0 && (
             <Text style={{ textAlign: 'center', color: '#999', padding: 10 }}>No se encontraron servicios</Text>
           )}
