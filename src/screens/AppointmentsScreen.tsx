@@ -597,26 +597,26 @@ export default function AppointmentsScreen({ route, navigation }: any) {
           </View>
         )}
 
-        {existingClientData && (
+        {existingClientData ? (
           <View style={styles.existingClientBox}>
             <Text style={styles.existingClientText}>
               ⭐ ¡Cliente habitual encontrado! ({existingClientData.name})
             </Text>
-            {existingClientData.isProblematic && (
+            {existingClientData.isProblematic ? (
               <Text style={{color: '#c0392b', fontWeight: 'bold', fontSize: 13, marginTop: 4, marginBottom: 8}}>
                 ⚠️ ATENCIÓN: Esta clienta ha cancelado o no ha acudido a 2 o más citas. Se recomienda solicitar Pago de Reserva.
               </Text>
-            )}
-            {existingClientData.isTenth && (
+            ) : null}
+            {existingClientData.isTenth ? (
               <Text style={{color: '#27ae60', fontWeight: 'bold', fontSize: 13, marginTop: 4, marginBottom: 8}}>
                 🎁 PREMIO: ¡Ésta será la 10ª cita de la clienta! El sistema aplicará la etiqueta de descuento automáticamente.
               </Text>
-            )}
+            ) : null}
             <TouchableOpacity style={styles.autofillBtn} onPress={autofillClient}>
               <Text style={styles.autofillBtnText}>⚡ Autocompletar datos del cliente</Text>
             </TouchableOpacity>
           </View>
-        )}
+        ) : null}
       </View>
 
       {/* NOMBRE DEL CLIENTE */}

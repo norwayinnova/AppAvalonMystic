@@ -914,9 +914,9 @@ export default function CalendarScreen({ route, navigation }: any) {
                               }}
                             >
                               <Text style={{ fontSize: 11, fontWeight: 'bold', color: colors.text }} numberOfLines={1}>{item.time} · {item.serviceName}</Text>
-                              {height > 35 && <Text style={{ fontSize: 10, color: colors.text, opacity: 0.75, marginTop: 1 }} numberOfLines={1}>👤 {item.client}</Text>}
-                              {height > 55 && item.address && <Text style={{ fontSize: 10, color: colors.text, opacity: 0.6, marginTop: 1 }} numberOfLines={1}>📍 {item.address}</Text>}
-                              {conflicts[item.id] && <Text style={{ fontSize: 10, color: '#d9534f' }}>⚠️</Text>}
+                              {height > 35 ? <Text style={{ fontSize: 10, color: colors.text, opacity: 0.75, marginTop: 1 }} numberOfLines={1}>👤 {item.client}</Text> : null}
+                              {height > 55 && item.address ? <Text style={{ fontSize: 10, color: colors.text, opacity: 0.6, marginTop: 1 }} numberOfLines={1}>📍 {item.address}</Text> : null}
+                              {conflicts[item.id] ? <Text style={{ fontSize: 10, color: '#d9534f' }}>⚠️</Text> : null}
                             </TouchableOpacity>
                           );
                         })}
