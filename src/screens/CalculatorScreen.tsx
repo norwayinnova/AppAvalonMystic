@@ -16,6 +16,7 @@ export default function CalculatorScreen() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
+  const [weekOffset, setWeekOffset] = useState(0);
   const [percentagesBizum, setPercentagesBizum] = useState<Record<string, string>>({});
   const [percentagesCash, setPercentagesCash] = useState<Record<string, string>>({});
 
