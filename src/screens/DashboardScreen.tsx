@@ -184,7 +184,7 @@ export default function DashboardScreen() {
       // Si es una nómina y está en este rango de fechas
       if (ex.type === 'payroll' && ex.team) {
         if (!byTeam[ex.team]) {
-           byTeam[ex.team] = { clients: 0, revenue: 0, pending: 0, cancelled: 0, workedMins: 0, blockedMins: 0, payrollPaid: 0 };
+           byTeam[ex.team] = { clients: 0, revenue: 0, pending: 0, cancelled: 0, workedMins: 0, blockedMins: 0, payrollPaid: 0, cash: 0, bizum: 0, otro: 0 };
         }
         if (byTeam[ex.team].payrollPaid === undefined) byTeam[ex.team].payrollPaid = 0;
         byTeam[ex.team].payrollPaid += amt;
@@ -470,13 +470,13 @@ export default function DashboardScreen() {
                   </Text>
                 </View>
                 <View style={{alignItems: 'flex-end'}}>
-                  <Text style={{fontWeight: 'bold', color: '#2ecc71', fontSize: 15}}>{tData.revenue.toFixed(2)} €</Text>
+                  <Text style={{fontWeight: 'bold', color: '#2ecc71', fontSize: 15}}>{(tData.revenue || 0).toFixed(2)} €</Text>
                   <View style={{flexDirection: 'row', gap: 6, marginTop: 2}}>
-                    <Text style={{fontSize: 10, color: '#888'}}>💵 {tData.cash.toFixed(0)}€</Text>
-                    <Text style={{fontSize: 10, color: '#888'}}>📱 {tData.bizum.toFixed(0)}€</Text>
-                    <Text style={{fontSize: 10, color: '#888'}}>💳 {tData.otro.toFixed(0)}€</Text>
+                    <Text style={{fontSize: 10, color: '#888'}}>💵 {(tData.cash || 0).toFixed(0)}€</Text>
+                    <Text style={{fontSize: 10, color: '#888'}}>📱 {(tData.bizum || 0).toFixed(0)}€</Text>
+                    <Text style={{fontSize: 10, color: '#888'}}>💳 {(tData.otro || 0).toFixed(0)}€</Text>
                   </View>
-                  <Text style={{fontSize: 12, color: '#f39c12', marginTop: 4}}>⏳ Pendiente: {tData.pending.toFixed(2)} €</Text>
+                  <Text style={{fontSize: 12, color: '#f39c12', marginTop: 4}}>⏳ Pendiente: {(tData.pending || 0).toFixed(2)} €</Text>
                   {tData.payrollPaid > 0 && (
                     <Text style={{fontSize: 11, color: '#D48A9A', marginTop: 4, fontWeight: 'bold'}}>💰 Nómina: {tData.payrollPaid.toFixed(2)} €</Text>
                   )}
