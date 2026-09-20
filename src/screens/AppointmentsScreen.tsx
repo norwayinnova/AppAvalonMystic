@@ -45,6 +45,7 @@ export default function AppointmentsScreen({ route, navigation }: any) {
   
   const [existingAppointments, setExistingAppointments] = useState<any[]>([]);
   const [smartSuggestion, setSmartSuggestion] = useState<any>(null);
+  const [serviceSearch, setServiceSearch] = useState('');
 
   // 1. Cargar Equipos dinámicos desde Firestore
   useEffect(() => {
@@ -444,17 +445,49 @@ export default function AppointmentsScreen({ route, navigation }: any) {
 
       {customDuration === 'show_services' && (
         <View style={styles.dropdownList}>
-          {services.map(srv => (
-            <TouchableOpacity 
-              key={srv.id} 
-              style={[styles.dropdownItem, selectedService?.id === srv.id && styles.dropdownItemSelected]}
-              onPress={() => { handleSelectService(srv); setCustomDuration(''); }}
-            >
-              <Text style={selectedService?.id === srv.id ? styles.dropdownItemTextSelected : styles.dropdownItemText}>
-                {srv.name} (⏱ {srv.duration}m{srv.price ? ` · 💶 ${srv.price}€` : ''})
+          <TextInput
+            style={[styles.input, { marginBottom: 10, borderColor: '#D48A9A' }]}
+            placeholder="🔍 Buscar servicio (ej. 'semip')"
+            value={serviceSearch}
+            onChangeText={setServiceSearch}
+            autoFocus
+          />
+          {Object.entries(
+            services
+              .filter(s => s.name.toLowerCase().includes(serviceSearch.toLowerCase()))
+              .reduce((acc: Record<string, any[]>, curr) => {
+                const cat = curr.category || 'General';
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(curr);
+                return acc;
+              }, {})
+          )
+          .sort(([catA], [catB]) => catA.localeCompare(catB))
+          .map(([categoryName, catServices]) => (
+            <View key={categoryName} style={{ marginBottom: 10 }}>
+              <Text style={{ fontWeight: 'bold', color: '#333', backgroundColor: '#f0f0f0', padding: 5, borderRadius: 5 }}>
+                📁 {categoryName}
               </Text>
-            </TouchableOpacity>
+              {catServices.map(srv => (
+                <TouchableOpacity 
+                  key={srv.id} 
+                  style={[styles.dropdownItem, selectedService?.id === srv.id && styles.dropdownItemSelected, { paddingLeft: 15 }]}
+                  onPress={() => {
+                    handleSelectService(srv);
+                    setCustomDuration('');
+                    setServiceSearch('');
+                  }}
+                >
+                  <Text style={[styles.dropdownItemText, selectedService?.id === srv.id && styles.dropdownItemTextSelected]}>
+                    ✨ {srv.name} (⏱ {srv.duration} min)
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           ))}
+          {services.filter(s => s.name.toLowerCase().includes(serviceSearch.toLowerCase())).length === 0 && (
+            <Text style={{ textAlign: 'center', color: '#999', padding: 10 }}>No se encontraron servicios</Text>
+          )}
         </View>
       )}
 

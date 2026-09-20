@@ -8,6 +8,7 @@ interface Service {
   name: string;
   duration: string;
   price?: string;
+  category?: string;
   allowedTeams?: string[];
 }
 
@@ -15,6 +16,7 @@ export default function ServicesScreen() {
   const [services, setServices] = useState<Service[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
   const [duration, setDuration] = useState('');
   const [price, setPrice] = useState('');
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
@@ -58,6 +60,7 @@ export default function ServicesScreen() {
     try {
       const serviceData: any = {
         name: name.trim(),
+        category: category.trim() || 'General',
         duration: duration.trim(),
         price: price.trim() || '',
         allowedTeams: selectedTeams
@@ -76,6 +79,7 @@ export default function ServicesScreen() {
         });
       }
       setName('');
+      setCategory('');
       setDuration('');
       setPrice('');
       setSelectedTeams([]);
@@ -87,6 +91,7 @@ export default function ServicesScreen() {
   const startEdit = (item: Service) => {
     setEditingId(item.id);
     setName(item.name);
+    setCategory(item.category || 'General');
     setDuration(item.duration);
     setPrice(item.price || '');
     setSelectedTeams(item.allowedTeams || []);
@@ -95,6 +100,7 @@ export default function ServicesScreen() {
   const cancelEdit = () => {
     setEditingId(null);
     setName('');
+    setCategory('');
     setDuration('');
     setPrice('');
     setSelectedTeams([]);
@@ -125,6 +131,12 @@ export default function ServicesScreen() {
           placeholder="Nombre (ej. Manicura semipermanente)"
           value={name}
           onChangeText={setName}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Categoría / Grupo (ej. Manicura)"
+          value={category}
+          onChangeText={setCategory}
         />
         <TextInput
           style={styles.input}
@@ -191,23 +203,39 @@ export default function ServicesScreen() {
         <Text style={styles.empty}>Aún no has añadido ningún servicio.</Text>
       ) : (
         <View style={{ paddingBottom: 40 }}>
-          {services.map((item) => (
-            <View key={item.id} style={[styles.serviceCard, editingId === item.id && styles.serviceCardEditing]}>
-              <View style={styles.serviceInfo}>
-                <Text style={styles.serviceName}>{item.name}</Text>
-                <View style={styles.badgeRow}>
-                  <Text style={styles.serviceDuration}>⏱ {item.duration} min</Text>
-                  {item.price ? <Text style={styles.servicePrice}>💶 {item.price} €</Text> : null}
+          {Object.entries(
+            services.reduce((acc: Record<string, Service[]>, curr) => {
+              const cat = curr.category || 'General';
+              if (!acc[cat]) acc[cat] = [];
+              acc[cat].push(curr);
+              return acc;
+            }, {})
+          )
+          .sort(([catA], [catB]) => catA.localeCompare(catB))
+          .map(([categoryName, catServices]) => (
+            <View key={categoryName} style={{ marginBottom: 20 }}>
+              <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 10, paddingHorizontal: 5 }}>
+                📁 {categoryName}
+              </Text>
+              {catServices.map((item) => (
+                <View key={item.id} style={[styles.serviceCard, editingId === item.id && styles.serviceCardEditing]}>
+                  <View style={styles.serviceInfo}>
+                    <Text style={styles.serviceName}>{item.name}</Text>
+                    <View style={styles.badgeRow}>
+                      <Text style={styles.serviceDuration}>⏱ {item.duration} min</Text>
+                      {item.price ? <Text style={styles.servicePrice}>💶 {item.price} €</Text> : null}
+                    </View>
+                  </View>
+                  <View style={styles.cardActions}>
+                    <TouchableOpacity style={styles.iconBtn} onPress={() => startEdit(item)}>
+                      <Text style={styles.actionIcon}>✏️</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.iconBtn} onPress={() => deleteService(item.id, item.name)}>
+                      <Text style={styles.actionIcon}>🗑️</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-              <View style={styles.cardActions}>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => startEdit(item)}>
-                  <Text style={styles.actionIcon}>✏️</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => deleteService(item.id, item.name)}>
-                  <Text style={styles.actionIcon}>🗑️</Text>
-                </TouchableOpacity>
-              </View>
+              ))}
             </View>
           ))}
         </View>
