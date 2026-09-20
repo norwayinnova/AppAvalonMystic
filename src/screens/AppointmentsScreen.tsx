@@ -450,10 +450,6 @@ export default function AppointmentsScreen({ route, navigation }: any) {
 
       // Si estamos editando, borramos el documento original
       if (editingAppointmentId) {
-        // En una app real, si una "cita editada" originalmente tenía múltiples docs, 
-        // requeriría agruparlos por ID de grupo. Aquí como se borra 1 doc, si había 2, solo borra 1.
-        // Pero para el caso de editar un doc, está bien.
-        const { deleteDoc } = require('firebase/firestore');
         await deleteDoc(doc(db, 'appointments', editingAppointmentId));
       }
 
@@ -548,7 +544,8 @@ export default function AppointmentsScreen({ route, navigation }: any) {
       setSelectedServices([]);
       setServiceTeamAssignments({});
       setSmartSuggestion(null);
-      alert("Cita creada correctamente");
+      setEditingAppointmentId(null);
+      alert(editingAppointmentId ? "Cita actualizada correctamente" : "Cita creada correctamente");
       navigation.navigate('Calendar');
     } catch (error) {
       console.error("Detalle del error:", error);
@@ -571,7 +568,7 @@ export default function AppointmentsScreen({ route, navigation }: any) {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Programar Nueva Cita</Text>
+      <Text style={styles.title}>{editingAppointmentId ? 'Editar Cita' : 'Programar Nueva Cita'}</Text>
       
       {/* TELÉFONO Y DETECCIÓN AUTOMÁTICA DE CLIENTE */}
       <View style={{ marginBottom: 12 }}>
