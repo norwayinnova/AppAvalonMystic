@@ -124,7 +124,7 @@ export default function DashboardScreen() {
       if (!app.date || app.date < startStr || app.date > endStr) return;
 
       const team = app.team || 'Sin asignar';
-      if (!byTeam[team]) byTeam[team] = { clients: 0, revenue: 0, pending: 0, cancelled: 0, workedMins: 0, blockedMins: 0, payrollPaid: 0 };
+      if (!byTeam[team]) byTeam[team] = { clients: 0, revenue: 0, pending: 0, cancelled: 0, workedMins: 0, blockedMins: 0, payrollPaid: 0, cash: 0, bizum: 0, otro: 0 };
       
       let isCancelled = app.status === 'cancelled';
       let isBloqueo = (app.serviceName && app.serviceName.toLowerCase().includes('bloquead')) || (app.client && app.client.toLowerCase().includes('bloquead'));
@@ -149,9 +149,16 @@ export default function DashboardScreen() {
           revenue += price;
           byTeam[team].revenue += price;
           
-          if (app.paymentMethod === 'cash') cash += price;
-          else if (app.paymentMethod === 'bizum') bizum += price;
-          else otro += price;
+          if (app.paymentMethod === 'cash') {
+            cash += price;
+            byTeam[team].cash += price;
+          } else if (app.paymentMethod === 'bizum') {
+            bizum += price;
+            byTeam[team].bizum += price;
+          } else {
+            otro += price;
+            byTeam[team].otro += price;
+          }
 
           chartDataMap[app.date] = (chartDataMap[app.date] || 0) + price;
         }
@@ -448,7 +455,12 @@ export default function DashboardScreen() {
                 </View>
                 <View style={{alignItems: 'flex-end'}}>
                   <Text style={{fontWeight: 'bold', color: '#2ecc71', fontSize: 15}}>{tData.revenue.toFixed(2)} €</Text>
-                  <Text style={{fontSize: 12, color: '#f39c12'}}>⏳ {tData.pending.toFixed(2)} €</Text>
+                  <View style={{flexDirection: 'row', gap: 6, marginTop: 2}}>
+                    <Text style={{fontSize: 10, color: '#888'}}>💵 {tData.cash.toFixed(0)}€</Text>
+                    <Text style={{fontSize: 10, color: '#888'}}>📱 {tData.bizum.toFixed(0)}€</Text>
+                    <Text style={{fontSize: 10, color: '#888'}}>💳 {tData.otro.toFixed(0)}€</Text>
+                  </View>
+                  <Text style={{fontSize: 12, color: '#f39c12', marginTop: 4}}>⏳ Pendiente: {tData.pending.toFixed(2)} €</Text>
                   {tData.payrollPaid > 0 && (
                     <Text style={{fontSize: 11, color: '#D48A9A', marginTop: 4, fontWeight: 'bold'}}>💰 Nómina: {tData.payrollPaid.toFixed(2)} €</Text>
                   )}

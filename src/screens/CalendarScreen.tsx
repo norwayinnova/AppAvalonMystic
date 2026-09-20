@@ -513,6 +513,25 @@ export default function CalendarScreen({ route, navigation }: any) {
     }
   };
 
+  const undoCompleteService = async (item: Appointment) => {
+    try {
+      await updateDoc(doc(db, 'appointments', item.id), {
+         status: 'pending',
+         completedAt: null,
+         paymentStatus: null,
+         paymentMethod: null,
+         finalPrice: null
+      });
+      if (selectedAppointment && selectedAppointment.id === item.id) {
+         setSelectedAppointment({ ...selectedAppointment, status: 'pending', completedAt: undefined, paymentStatus: undefined, paymentMethod: undefined, finalPrice: undefined });
+      }
+      setFinalPriceInput('');
+      alert('Cobro deshecho. Ahora puedes volver a registrarlo correctamente.');
+    } catch (e) {
+      alert('Error al deshacer el cobro.');
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* CABECERA (Fechas, Filtros y Optimizador) */}
@@ -996,11 +1015,21 @@ export default function CalendarScreen({ route, navigation }: any) {
               {/* SECCIÓN DE COBRO Y FINALIZACIÓN */}
               <View style={styles.paymentSection}>
                 {selectedAppointment.status === 'completed' ? (
-                  <View style={styles.completedBadge}>
-                    <Text style={styles.completedBadgeText}>
-                      ✓ Finalizado ({selectedAppointment.paymentStatus === 'paid' ? `Cobrado en ${selectedAppointment.paymentMethod === 'bizum' ? 'Bizum' : 'Efectivo'}` : 'Pago Pendiente'})
-                      {selectedAppointment.finalPrice ? ` - ${selectedAppointment.finalPrice}€` : ''}
-                    </Text>
+                  <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+                    <View style={[styles.completedBadge, { flex: 1 }]}>
+                      <Text style={styles.completedBadgeText}>
+                        ✓ Finalizado ({selectedAppointment.paymentStatus === 'paid' ? `Cobrado en ${selectedAppointment.paymentMethod === 'bizum' ? 'Bizum' : 'Efectivo'}` : 'Pago Pendiente'})
+                        {selectedAppointment.finalPrice ? ` - ${selectedAppointment.finalPrice}€` : ''}
+                      </Text>
+                    </View>
+                    {isStrictAdmin && (
+                      <TouchableOpacity 
+                        style={{ marginLeft: 10, padding: 8, backgroundColor: '#f39c12', borderRadius: 6 }} 
+                        onPress={() => undoCompleteService(selectedAppointment)}
+                      >
+                        <Text style={{color: '#fff', fontSize: 12, fontWeight: 'bold'}}>✏️ Corregir</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 ) : (
                   <>
