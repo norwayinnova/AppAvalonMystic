@@ -117,7 +117,7 @@ export default function DashboardScreen() {
       endStr = formatYMD(new Date(now.getFullYear(), 11, 31));
     }
 
-    let revenue = 0, expTotal = 0, clients = 0, pending = 0, cash = 0, bizum = 0, otro = 0;
+    let revenue = 0, expTotal = 0, clientsCount = 0, pending = 0, cash = 0, bizum = 0, otro = 0;
     const byTeam: Record<string, any> = {};
     const pendingList: any[] = [];
     const cancelledList: any[] = [];
@@ -142,7 +142,7 @@ export default function DashboardScreen() {
       if (isBloqueo) {
         byTeam[team].blockedMins += durationMins;
       } else {
-        clients++;
+        clientsCount++;
         byTeam[team].clients++;
         byTeam[team].workedMins += durationMins;
 
