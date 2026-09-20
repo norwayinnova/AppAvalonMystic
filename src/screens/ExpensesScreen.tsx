@@ -35,7 +35,8 @@ export default function ExpensesScreen() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const expensesList: Expense[] = [];
       snapshot.forEach((docSnap) => {
-        expensesList.push({ id: docSnap.id, ...docSnap.data() } as Expense);
+        const data = docSnap.data();
+        expensesList.push({ id: docSnap.id, ...data, amount: Number(data.amount || 0) } as Expense);
       });
       setExpenses(expensesList);
       setLoading(false);
