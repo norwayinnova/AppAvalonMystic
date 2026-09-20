@@ -52,6 +52,22 @@ export default function AppointmentsScreen({ route, navigation }: any) {
   const [clientSuggestions, setClientSuggestions] = useState<any[]>([]);
   const [showClientSuggestions, setShowClientSuggestions] = useState(false);
 
+  const [serviceTeamAssignments, setServiceTeamAssignments] = useState<Record<string, string>>({});
+
+  const moveServiceUp = (index: number) => {
+    if (index === 0) return;
+    const newServices = [...selectedServices];
+    [newServices[index - 1], newServices[index]] = [newServices[index], newServices[index - 1]];
+    setSelectedServices(newServices);
+  };
+
+  const moveServiceDown = (index: number) => {
+    if (index === selectedServices.length - 1) return;
+    const newServices = [...selectedServices];
+    [newServices[index + 1], newServices[index]] = [newServices[index], newServices[index + 1]];
+    setSelectedServices(newServices);
+  };
+
   // Actualizar estado si los params cambian
   useEffect(() => {
     if (route?.params?.selectedDate) setDate(route.params.selectedDate);
@@ -284,11 +300,23 @@ export default function AppointmentsScreen({ route, navigation }: any) {
       let newServices;
       if (isSelected) {
         newServices = prev.filter(s => s.id !== srv.id);
+        setServiceTeamAssignments(prevAssign => {
+          const newAssign = { ...prevAssign };
+          delete newAssign[srv.id];
+          return newAssign;
+        });
       } else {
         newServices = [...prev, srv];
+        setServiceTeamAssignments(prevAssign => {
+          const allowed = srv.allowedTeams || [];
+          let defaultTeam = team || (teams[0]?.name ?? 'Equipo 1');
+          if (allowed.length > 0 && !allowed.includes(defaultTeam)) {
+            defaultTeam = allowed[0]; // asigna a la primera que pueda si la actual no puede
+          }
+          return { ...prevAssign, [srv.id]: defaultTeam };
+        });
       }
       
-      // Actualizar precio total
       const totalPrice = newServices.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
       setPrice(totalPrice > 0 ? totalPrice.toString() : '');
       
@@ -343,19 +371,39 @@ export default function AppointmentsScreen({ route, navigation }: any) {
     const finalAddress = '';
     const finalTime = isFullDayBlock ? '09:00' : time;
     const finalDuration = isFullDayBlock ? '660' : getCombinedDuration().toString();
-    const joinedNames = selectedServices.map(s => s.name).join(' + ');
-    const finalServiceName = isFullDayBlock ? 'Bloqueo Completo' : joinedNames || 'Bloqueo';
 
+    // Comprobación de solapamientos secuencial
     if (!isFullDayBlock) {
-      const status = checkSlotStatus(finalTime);
-      if (status.conflict) {
-        alert(status.reason);
-        return;
+      let currentStartTimeStr = finalTime;
+      const getMinutes = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+      const minutesToTime = (m: number) => `${String(Math.floor(m / 60)).padStart(2,'0')}:${String(m % 60).padStart(2,'0')}`;
+      
+      let currentMin = getMinutes(finalTime);
+
+      for (const srv of selectedServices) {
+        const srvTeam = serviceTeamAssignments[srv.id] || team || (teams[0]?.name ?? 'Equipo 1');
+        const srvDur = srv.name?.toLowerCase().includes('bloquead') && customDuration ? parseInt(customDuration) : parseInt(srv.duration || '60');
+        
+        const teamApps = existingAppointments.filter(a => (a.team || teams[0]?.name || 'Equipo 1') === srvTeam && a.status !== 'cancelled');
+        const newStart = currentMin;
+        const newEnd = currentMin + srvDur;
+
+        for (const app of teamApps) {
+          const existingStart = getMinutes(app.time);
+          const existingEnd = existingStart + parseInt(app.duration);
+          const isBloqueo = app.serviceName.toLowerCase().includes('bloquead') || app.client.toLowerCase().includes('bloquead');
+
+          if (newStart < existingEnd && newEnd > existingStart) {
+            if (isBloqueo && newStart < existingStart) continue;
+            alert(`⚠️ Solapamiento en el servicio ${srv.name}: Ya hay una cita en el equipo ${srvTeam} de ${app.time} a ${minutesToTime(existingEnd)}.`);
+            return;
+          }
+        }
+        currentMin += srvDur;
       }
     }
 
     try {
-      const finalTeam = team || (teams[0]?.name ?? 'Equipo 1');
       const cleanPhone = phone.trim();
       const cleanClient = client.trim();
 
@@ -364,21 +412,51 @@ export default function AppointmentsScreen({ route, navigation }: any) {
         finalNotes = '🌟 10ª Cita - APLICAR 20% DESCUENTO';
       }
 
-      // 1. Guardar la cita
-      await addDoc(collection(db, 'appointments'), {
-        client: cleanClient,
-        phone: cleanPhone,
-        date,
-        time: finalTime,
-        address: finalAddress,
-        detailedInfo: detailedInfo.trim(),
-        price: price.trim() || '',
-        team: finalTeam,
-        serviceName: finalServiceName,
-        duration: finalDuration,
-        notes: finalNotes,
-        createdAt: new Date()
-      });
+      // 1. Guardar las citas secuencialmente
+      if (isFullDayBlock) {
+        const finalTeam = team || (teams[0]?.name ?? 'Equipo 1');
+        await addDoc(collection(db, 'appointments'), {
+          client: cleanClient,
+          phone: cleanPhone,
+          date,
+          time: finalTime,
+          duration: finalDuration,
+          serviceName: 'Bloqueo Completo',
+          price: price,
+          address: finalAddress,
+          detailedInfo: detailedInfo.trim(),
+          team: finalTeam,
+          createdAt: new Date(),
+          status: 'pending',
+          notes: finalNotes
+        });
+      } else {
+        const getMinutes = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+        const minutesToTime = (m: number) => `${String(Math.floor(m / 60)).padStart(2,'0')}:${String(m % 60).padStart(2,'0')}`;
+        let currentMin = getMinutes(finalTime);
+
+        for (const srv of selectedServices) {
+          const srvTeam = serviceTeamAssignments[srv.id] || team || (teams[0]?.name ?? 'Equipo 1');
+          const srvDur = srv.name?.toLowerCase().includes('bloquead') && customDuration ? parseInt(customDuration) : parseInt(srv.duration || '60');
+          
+          await addDoc(collection(db, 'appointments'), {
+            client: cleanClient,
+            phone: cleanPhone,
+            date,
+            time: minutesToTime(currentMin),
+            duration: srvDur.toString(),
+            serviceName: srv.name,
+            price: srv.price || '0',
+            address: finalAddress,
+            detailedInfo: detailedInfo.trim(),
+            team: srvTeam,
+            createdAt: new Date(),
+            status: 'pending',
+            notes: finalNotes
+          });
+          currentMin += srvDur;
+        }
+      }
 
       // 2. Gestionar la ficha de Cliente (Crear nuevo o Actualizar existente)
       try {
@@ -387,7 +465,6 @@ export default function AppointmentsScreen({ route, navigation }: any) {
           const snap = await getDocs(qClient);
 
           if (!snap.empty) {
-            // Cliente existente: actualizar datos si cambiaron
             const existingDoc = snap.docs[0];
             await updateDoc(doc(db, 'clients', existingDoc.id), {
               name: cleanClient,
@@ -397,7 +474,6 @@ export default function AppointmentsScreen({ route, navigation }: any) {
               updatedAt: new Date()
             });
           } else {
-            // Cliente nuevo: registrar en cartera de clientes
             await addDoc(collection(db, 'clients'), {
               name: cleanClient,
               phone: cleanPhone,
@@ -425,6 +501,7 @@ export default function AppointmentsScreen({ route, navigation }: any) {
       setIsValidated(false);
       setPrice('');
       setSelectedServices([]);
+      setServiceTeamAssignments({});
       setSmartSuggestion(null);
       alert("Cita creada correctamente");
       navigation.navigate('Calendar');
@@ -615,34 +692,96 @@ export default function AppointmentsScreen({ route, navigation }: any) {
         </View>
       )}
 
-      {isAdmin ? (
-        <>
-          <Text style={styles.subtitle}>2. Equipo Asignado:</Text>
-          <TouchableOpacity 
-            style={styles.dropdownBtn} 
-            onPress={() => setCustomDuration(customDuration === 'show_teams' ? '' : 'show_teams')}
-          >
-            <Text style={styles.dropdownText}>
-              {team ? `💇‍♀️ ${team}` : '▼ Seleccionar equipo...'}
-            </Text>
-          </TouchableOpacity>
+      {selectedServices.length > 0 && (
+        <View style={{ marginTop: 20, marginBottom: 10 }}>
+          <Text style={styles.subtitle}>2. Orden y Asignación de Servicios:</Text>
+          <Text style={{fontSize: 12, color: '#666', marginBottom: 10}}>Si hay varios servicios, se programarán uno detrás de otro. Elige el orden y qué empleada hará cada uno.</Text>
+          
+          {selectedServices.map((srv, index) => {
+            const srvTeam = serviceTeamAssignments[srv.id] || team || (teams[0]?.name ?? 'Equipo 1');
+            const allowed = srv.allowedTeams || [];
+            const availableTeamsForSrv = allowed.length > 0 ? teams.filter(t => allowed.includes(t.name)) : teams;
 
-          {customDuration === 'show_teams' && (
-            <View style={styles.dropdownList}>
-              {activeTeamsList.map(t => (
-                <TouchableOpacity 
-                  key={t} 
-                  style={[styles.dropdownItem, (team || activeTeamsList[0]) === t && styles.dropdownItemSelected]} 
-                  onPress={() => { setTeam(t); setCustomDuration(''); }}
-                >
-                  <Text style={(team || activeTeamsList[0]) === t ? styles.dropdownItemTextSelected : styles.dropdownItemText}>💇‍♀️ {t}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            return (
+              <View key={srv.id} style={{ backgroundColor: '#f8fafc', padding: 10, borderRadius: 8, marginBottom: 8, borderWidth: 1, borderColor: '#e0e8f0' }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ fontWeight: 'bold', flex: 1 }}>{index + 1}. {srv.name}</Text>
+                  <View style={{ flexDirection: 'row', gap: 5 }}>
+                    {index > 0 && (
+                      <TouchableOpacity onPress={() => moveServiceUp(index)} style={{ padding: 4, backgroundColor: '#e0e8f0', borderRadius: 4 }}>
+                        <Text>⬆️</Text>
+                      </TouchableOpacity>
+                    )}
+                    {index < selectedServices.length - 1 && (
+                      <TouchableOpacity onPress={() => moveServiceDown(index)} style={{ padding: 4, backgroundColor: '#e0e8f0', borderRadius: 4 }}>
+                        <Text>⬇️</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+
+                {isAdmin ? (
+                  <View style={{ marginTop: 8 }}>
+                    <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Asignado a:</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      {availableTeamsForSrv.map(t => (
+                        <TouchableOpacity
+                          key={t.name}
+                          onPress={() => setServiceTeamAssignments(prev => ({...prev, [srv.id]: t.name}))}
+                          style={{
+                            paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginRight: 8,
+                            backgroundColor: srvTeam === t.name ? '#D48A9A' : '#e0e8f0'
+                          }}
+                        >
+                          <Text style={{ color: srvTeam === t.name ? '#fff' : '#333', fontSize: 12, fontWeight: srvTeam === t.name ? 'bold' : 'normal' }}>
+                            {t.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                ) : (
+                  <Text style={{ fontSize: 12, color: '#666', marginTop: 8 }}>Asignado a: {srvTeam}</Text>
+                )}
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {/* Solo mostramos el equipo global por defecto si no hay servicios seleccionados */}
+      {selectedServices.length === 0 && (
+        <View style={{ marginTop: 20, marginBottom: 10 }}>
+          {isAdmin ? (
+            <>
+              <Text style={styles.subtitle}>2. Equipo (Por defecto):</Text>
+              <TouchableOpacity 
+                style={styles.dropdownBtn} 
+                onPress={() => setCustomDuration(customDuration === 'show_teams' ? '' : 'show_teams')}
+              >
+                <Text style={styles.dropdownText}>
+                  {team ? `💇‍♀️ ${team}` : '▼ Seleccionar equipo...'}
+                </Text>
+              </TouchableOpacity>
+
+              {customDuration === 'show_teams' && (
+                <View style={styles.dropdownList}>
+                  {teams.map(t => (
+                    <TouchableOpacity 
+                      key={t.id} 
+                      style={[styles.dropdownItem, (team || teams[0]?.name) === t.name && styles.dropdownItemSelected]} 
+                      onPress={() => { setTeam(t.name); setCustomDuration(''); }}
+                    >
+                      <Text style={(team || teams[0]?.name) === t.name ? styles.dropdownItemTextSelected : styles.dropdownItemText}>💇‍♀️ {t.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </>
+          ) : (
+            <Text style={styles.subtitle}>2. Asignado a ti (💇‍♀️ {team})</Text>
           )}
-        </>
-      ) : (
-        <Text style={styles.subtitle}>2. Asignado a ti (💇‍♀️ {team})</Text>
+        </View>
       )}
 
       <Text style={styles.subtitle}>3. Día y Hora:</Text>
@@ -676,10 +815,10 @@ export default function AppointmentsScreen({ route, navigation }: any) {
             <View style={[styles.dropdownList, {flexDirection: 'row', flexWrap: 'wrap', padding: 10}]}>
               {timeSlots.map(t => {
                 const status = checkSlotStatus(t);
-                const isConflict = selectedService ? status.conflict : false;
+                const isConflict = selectedServices.length > 0 ? status.conflict : false;
                 let chipStyle: any = styles.chipBtn; let textStyle: any = styles.textUnselected;
                 if (time === t) { chipStyle = styles.chipSelected; textStyle = styles.textSelected; } 
-                else if (selectedService) {
+                else if (selectedServices.length > 0) {
                    if (isConflict) { chipStyle = styles.chipConflict; textStyle = styles.textConflict; } 
                    else { chipStyle = styles.chipAvailable; textStyle = styles.textAvailable; }
                 }
