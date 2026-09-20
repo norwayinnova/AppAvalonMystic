@@ -16,8 +16,8 @@ export default function CalculatorScreen() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [weekOffset, setWeekOffset] = useState(0);
-  const [percentages, setPercentages] = useState<Record<string, string>>({});
+  const [percentagesBizum, setPercentagesBizum] = useState<Record<string, string>>({});
+  const [percentagesCash, setPercentagesCash] = useState<Record<string, string>>({});
 
   const [expenses, setExpenses] = useState<any[]>([]);
 
@@ -95,9 +95,8 @@ export default function CalculatorScreen() {
     return { startStr, endStr, byTeam };
   }, [appointments, weekOffset]);
 
-  const handlePercentageChange = (team: string, val: string) => {
-    setPercentages(prev => ({ ...prev, [team]: val }));
-  };
+  const handlePercentageBizumChange = (team: string, val: string) => setPercentagesBizum(prev => ({ ...prev, [team]: val }));
+  const handlePercentageCashChange = (team: string, val: string) => setPercentagesCash(prev => ({ ...prev, [team]: val }));
 
   if (loading) return <ActivityIndicator size="large" color="#D48A9A" style={{marginTop: 50}} />;
 
@@ -131,9 +130,10 @@ export default function CalculatorScreen() {
           const cashDays = Object.keys(dailyCash).sort();
           
           const completedCount = data.completedCount;
-          const pctVal = parseFloat(percentages[team] || '0') || 0;
+          const pctBizum = parseFloat(percentagesBizum[team] || '0') || 0;
+          const pctCash = parseFloat(percentagesCash[team] || '0') || 0;
           
-          const bizumPayout = (bizum * (pctVal / 100)).toFixed(2);
+          const bizumPayout = (bizum * (pctBizum / 100)).toFixed(2);
           const isBizumPaid = expenses.find(ex => ex.type === 'payroll' && ex.team === team && ex.week === stats.startStr && ex.paymentRef === 'bizum');
 
           return (
@@ -143,15 +143,27 @@ export default function CalculatorScreen() {
                 <Text style={styles.serviceCount}>{completedCount} servicios cobrados</Text>
               </View>
               
-              <View style={{ alignItems: 'center', marginBottom: 15 }}>
-                <Text style={styles.label}>Comisión a aplicar (%):</Text>
-                <TextInput
-                  style={styles.input}
-                  keyboardType="numeric"
-                  placeholder="Ej: 50"
-                  value={percentages[team] || ''}
-                  onChangeText={(val) => handlePercentageChange(team, val)}
-                />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 15 }}>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={styles.label}>% Comisión Bizum:</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    placeholder="Ej: 50"
+                    value={percentagesBizum[team] || ''}
+                    onChangeText={(val) => handlePercentageBizumChange(team, val)}
+                  />
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={styles.label}>% Comisión Efectivo:</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    placeholder="Ej: 50"
+                    value={percentagesCash[team] || ''}
+                    onChangeText={(val) => handlePercentageCashChange(team, val)}
+                  />
+                </View>
               </View>
 
               {/* BIZUM SEMANAL */}
@@ -186,7 +198,7 @@ export default function CalculatorScreen() {
               ) : (
                 cashDays.map(dayStr => {
                   const cashVal = dailyCash[dayStr] || 0;
-                  const cashPayout = (cashVal * (pctVal / 100)).toFixed(2);
+                  const cashPayout = (cashVal * (pctCash / 100)).toFixed(2);
                   const isCashPaid = expenses.find(ex => ex.type === 'payroll' && ex.team === team && ex.week === stats.startStr && ex.paymentRef === `cash_${dayStr}`);
 
                   return (
