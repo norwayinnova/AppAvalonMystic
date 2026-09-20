@@ -356,7 +356,7 @@ export default function ExpensesScreen() {
             <View style={styles.expenseCard}>
               <View style={styles.expenseInfo}>
                 <Text style={styles.expenseDate}>{item.date}</Text>
-                <Text style={styles.expenseConcept}>{item.concept}</Text>
+                <Text style={styles.expenseConcept}>{item.concept || (item as any).description || 'Gasto sin nombre'}</Text>
                 {item.team && item.team !== 'Oficina/General' ? (
                   <Text style={styles.expenseTeam}>🚐 {item.team}</Text>
                 ) : (
@@ -372,7 +372,7 @@ export default function ExpensesScreen() {
                       <Text style={styles.ticketIcon}>🧾 Ver Ticket</Text>
                     </TouchableOpacity>
                   ) : null}
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => deleteExpense(item.id, item.concept)}>
+                  <TouchableOpacity style={styles.iconBtn} onPress={() => deleteExpense(item.id, item.concept || (item as any).description || 'Gasto')}>
                     <Text style={styles.actionIcon}>🗑️</Text>
                   </TouchableOpacity>
                 </View>

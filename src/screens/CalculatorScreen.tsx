@@ -49,8 +49,7 @@ export default function CalculatorScreen() {
       const { addDoc } = require('firebase/firestore');
       await addDoc(collection(db, 'expenses'), {
         amount,
-        category: 'Nómina',
-        description: `Nómina ${team} - ${description}`,
+        concept: `Nómina ${team} - ${description}`,
         date: new Date().toISOString().split('T')[0],
         type: 'payroll',
         team,
