@@ -10,7 +10,8 @@ import {
   Linking,
   Image,
   ActivityIndicator,
-  Platform
+  Platform,
+  TouchableWithoutFeedback
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { collection, onSnapshot, query, where, doc, deleteDoc, addDoc, updateDoc } from 'firebase/firestore';
@@ -826,8 +827,29 @@ export default function CalendarScreen({ route, navigation }: any) {
                   {visibleTeams.map(t => {
                     const teamApps = appointments.filter(a => (a.team || teams[0]?.name) === t.name);
                     return (
-                      <View key={t.id} style={{ width: COL_WIDTH, height: GRID_HEIGHT, position: 'relative', borderRightWidth: 1, borderRightColor: '#e8eef4' }}>
-                        {/* Líneas de hora */}
+                      <TouchableWithoutFeedback 
+                        key={t.id}
+                        onPress={(e) => {
+                          const locationY = e.nativeEvent.locationY;
+                          const totalMinutesFromStart = locationY / PX_PER_MIN;
+                          const hours = Math.floor(totalMinutesFromStart / 60);
+                          const minutes = totalMinutesFromStart % 60;
+                          
+                          const realHour = START_HOUR + hours;
+                          const roundedMinutes = Math.floor(minutes / 15) * 15; // 0, 15, 30, 45
+                          
+                          const timeString = `${String(realHour).padStart(2, '0')}:${String(roundedMinutes).padStart(2, '0')}`;
+                          
+                          navigation.navigate('Appointments', { 
+                            selectedDate, 
+                            selectedTime: timeString, 
+                            teamName: t.name, 
+                            role: isAdmin ? 'admin' : role 
+                          });
+                        }}
+                      >
+                        <View style={{ width: COL_WIDTH, height: GRID_HEIGHT, position: 'relative', borderRightWidth: 1, borderRightColor: '#e8eef4' }}>
+                          {/* Líneas de hora */}
                         {HOUR_LINES.map(h => (
                           <View key={h} style={{ position: 'absolute', top: (h - START_HOUR) * 60 * PX_PER_MIN, left: 0, right: 0, height: 1, backgroundColor: h % 1 === 0 ? '#e8eef4' : '#f4f6f8' }} />
                         ))}
@@ -880,6 +902,7 @@ export default function CalendarScreen({ route, navigation }: any) {
                           );
                         })}
                       </View>
+                    </TouchableWithoutFeedback>
                     );
                   })}
                 </ScrollView>

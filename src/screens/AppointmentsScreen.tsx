@@ -15,15 +15,15 @@ import { Calendar } from 'react-native-calendars';
 import { db } from '../config/firebase';
 
 export default function AppointmentsScreen({ route, navigation }: any) {
-  const { role, teamName } = route?.params || { role: 'admin', teamName: null };
+  const { role, teamName, selectedDate, selectedTime } = route?.params || { role: 'admin', teamName: null };
   const isAdmin = role === 'admin' || role === 'management';
 
   const [client, setClient] = useState('');
   const [phone, setPhone] = useState('');
   const [existingClientData, setExistingClientData] = useState<any>(null);
 
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [time, setTime] = useState('');
+  const [date, setDate] = useState(selectedDate || new Date().toISOString().split('T')[0]);
+  const [time, setTime] = useState(selectedTime || '');
   const [isFullDayBlock, setIsFullDayBlock] = useState(false);
   const [customDuration, setCustomDuration] = useState('');
   
@@ -47,6 +47,17 @@ export default function AppointmentsScreen({ route, navigation }: any) {
   const [smartSuggestion, setSmartSuggestion] = useState<any>(null);
   const [serviceSearch, setServiceSearch] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  
+  const [allClients, setAllClients] = useState<any[]>([]);
+  const [clientSuggestions, setClientSuggestions] = useState<any[]>([]);
+  const [showClientSuggestions, setShowClientSuggestions] = useState(false);
+
+  // Actualizar estado si los params cambian
+  useEffect(() => {
+    if (route?.params?.selectedDate) setDate(route.params.selectedDate);
+    if (route?.params?.selectedTime) setTime(route.params.selectedTime);
+    if (route?.params?.teamName) setTeam(route.params.teamName);
+  }, [route?.params]);
 
   // 1. Cargar Equipos dinámicos desde Firestore
   useEffect(() => {
@@ -61,6 +72,16 @@ export default function AppointmentsScreen({ route, navigation }: any) {
       }
     });
     return () => unsubscribeTeams();
+  }, []);
+
+  // 1b. Cargar Clientes para Autocompletado
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'clients'), (snapshot) => {
+      const clientsList: any[] = [];
+      snapshot.forEach(docSnap => clientsList.push({ id: docSnap.id, ...docSnap.data() }));
+      setAllClients(clientsList);
+    });
+    return () => unsubscribe();
   }, []);
 
   // 2. Cargar Servicios
@@ -89,7 +110,17 @@ export default function AppointmentsScreen({ route, navigation }: any) {
   // BUSCADOR AUTOMÁTICO DE CLIENTES POR TELÉFONO
   const handlePhoneChange = async (text: string) => {
     setPhone(text);
-    setIsTenthAppointment(false); // Reset
+    setIsTenthAppointment(false);
+    
+    // Autocomplete Logic
+    if (text.length >= 3) {
+      const matches = allClients.filter(c => c.phone?.includes(text));
+      setClientSuggestions(matches.slice(0, 5)); // max 5 suggestions
+      setShowClientSuggestions(matches.length > 0);
+    } else {
+      setShowClientSuggestions(false);
+    }
+
     const cleanPhone = text.trim();
     if (cleanPhone.length >= 6) {
       try {
@@ -134,6 +165,35 @@ export default function AppointmentsScreen({ route, navigation }: any) {
       }
     } else {
       setExistingClientData(null);
+    }
+  };
+
+  const handleClientNameChange = (text: string) => {
+    setClient(text);
+    if (text.length >= 3) {
+      const matches = allClients.filter(c => c.name?.toLowerCase().includes(text.toLowerCase()));
+      setClientSuggestions(matches.slice(0, 5));
+      setShowClientSuggestions(matches.length > 0);
+    } else {
+      setShowClientSuggestions(false);
+    }
+  };
+
+  const selectClientSuggestion = (item: any) => {
+    setClient(item.name || '');
+    if (item.phone) {
+      handlePhoneChange(item.phone); // Triggers the existing logic to check history
+    }
+    setShowClientSuggestions(false);
+    
+    // Autofill address if available
+    if (item.address) {
+      setAddressInput(item.address);
+      setValidatedAddress(item.address);
+      setIsValidated(true);
+    }
+    if (item.detailedInfo) {
+      setDetailedInfo(item.detailedInfo);
     }
   };
 
@@ -392,6 +452,23 @@ export default function AppointmentsScreen({ route, navigation }: any) {
           value={phone}
           onChangeText={handlePhoneChange}
         />
+        
+        {/* Sugerencias de Autocompletado */}
+        {showClientSuggestions && clientSuggestions.length > 0 && (
+          <View style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: '#ccc', borderRadius: 8, marginTop: 4, elevation: 2 }}>
+            {clientSuggestions.map(s => (
+              <TouchableOpacity 
+                key={s.id} 
+                style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: '#eee' }}
+                onPress={() => selectClientSuggestion(s)}
+              >
+                <Text style={{ fontWeight: 'bold' }}>{s.name || 'Sin nombre'}</Text>
+                {s.phone ? <Text style={{ fontSize: 12, color: '#666' }}>📞 {s.phone}</Text> : null}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         {existingClientData && (
           <View style={styles.existingClientBox}>
             <Text style={styles.existingClientText}>
@@ -421,7 +498,7 @@ export default function AppointmentsScreen({ route, navigation }: any) {
           style={styles.input}
           placeholder="Ej: Laura García"
           value={client}
-          onChangeText={setClient}
+          onChangeText={handleClientNameChange}
         />
         {client.toLowerCase().includes('bloquead') && (
           <TouchableOpacity 
