@@ -138,7 +138,7 @@ export default function CalculatorScreen() {
           const bizumPaidList = expenses.filter(ex => ex.type === 'payroll' && ex.team === team && ex.week === stats.startStr && ex.paymentRef === 'bizum');
           const totalBizumPaid = bizumPaidList.reduce((acc, ex) => acc + parseFloat(ex.amount || '0'), 0);
           const remainingBizum = bizumPayoutNum - totalBizumPaid;
-          const isBizumPaid = remainingBizum <= 0.01;
+          const isBizumPaid = bizumPaidList.length > 0 && remainingBizum <= 0.01;
           const bizumPayoutStr = remainingBizum.toFixed(2);
 
           return (
@@ -208,7 +208,7 @@ export default function CalculatorScreen() {
                   const cashPaidList = expenses.filter(ex => ex.type === 'payroll' && ex.team === team && ex.week === stats.startStr && ex.paymentRef === `cash_${dayStr}`);
                   const totalCashPaid = cashPaidList.reduce((acc, ex) => acc + parseFloat(ex.amount || '0'), 0);
                   const remainingCash = cashPayoutNum - totalCashPaid;
-                  const isCashPaid = remainingCash <= 0.01;
+                  const isCashPaid = cashPaidList.length > 0 && remainingCash <= 0.01;
                   const cashPayoutStr = remainingCash.toFixed(2);
 
                   return (
