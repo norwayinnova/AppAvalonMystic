@@ -1043,6 +1043,13 @@ export default function CalendarScreen({ route, navigation }: any) {
                 
                 {isStrictAdmin && (
                   <View style={{flexDirection: 'row', gap: 6}}>
+                    <TouchableOpacity style={[styles.deleteApptIconBtn, {backgroundColor: '#3498db', paddingHorizontal: 12, justifyContent: 'center'}]} onPress={() => {
+                      const apptToEdit = { ...selectedAppointment };
+                      setSelectedAppointment(null);
+                      navigation.navigate('Appointments', { editAppointment: apptToEdit });
+                    }}>
+                      <Text style={[styles.deleteApptIconBtnText, {fontSize: 12, color: '#fff'}]}>✏️ Editar</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity style={[styles.deleteApptIconBtn, {backgroundColor: '#e74c3c', paddingHorizontal: 12, justifyContent: 'center'}]} onPress={() => cancelAppointment(selectedAppointment.id)}>
                       <Text style={[styles.deleteApptIconBtnText, {fontSize: 12, color: '#fff'}]}>🚫 Cancelar</Text>
                     </TouchableOpacity>

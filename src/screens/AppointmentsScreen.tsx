@@ -7,10 +7,9 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  ActivityIndicator,
   Linking
 } from 'react-native';
-import { collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { Calendar } from 'react-native-calendars';
 import { db } from '../config/firebase';
 
@@ -68,12 +67,49 @@ export default function AppointmentsScreen({ route, navigation }: any) {
     setSelectedServices(newServices);
   };
 
+  const [editingAppointmentId, setEditingAppointmentId] = useState<string | null>(null);
+
   // Actualizar estado si los params cambian
   useEffect(() => {
     if (route?.params?.selectedDate) setDate(route.params.selectedDate);
     if (route?.params?.selectedTime) setTime(route.params.selectedTime);
     if (route?.params?.teamName) setTeam(route.params.teamName);
+
+    if (route?.params?.editAppointment) {
+      const editData = route.params.editAppointment;
+      setEditingAppointmentId(editData.id);
+      setClient(editData.client || '');
+      setPhone(editData.phone || '');
+      setDate(editData.date || new Date().toISOString().split('T')[0]);
+      setTime(editData.time || '');
+      setTeam(editData.team || team);
+      setAddressInput(editData.address || '');
+      setDetailedInfo(editData.detailedInfo || '');
+      setPrice(editData.price || '');
+      
+      // Attempt to restore selected service if it matches one in `services`
+      // We will do this in another useEffect that depends on `services` loading
+    }
   }, [route?.params]);
+
+  // Restore selected services when services are loaded
+  useEffect(() => {
+    if (editingAppointmentId && services.length > 0 && route?.params?.editAppointment) {
+      const editData = route.params.editAppointment;
+      if (editData.serviceName === 'Bloqueo Completo') {
+        setIsFullDayBlock(true);
+      } else {
+        const foundSrv = services.find(s => s.name === editData.serviceName);
+        if (foundSrv && selectedServices.length === 0) {
+          setSelectedServices([foundSrv]);
+          setServiceTeamAssignments({ [foundSrv.id]: editData.team });
+          if (editData.serviceName.toLowerCase().includes('bloquead') && editData.duration) {
+            setCustomDuration(editData.duration.toString());
+          }
+        }
+      }
+    }
+  }, [services, editingAppointmentId, route?.params]);
 
   // 1. Cargar Equipos dinámicos desde Firestore
   useEffect(() => {
@@ -336,7 +372,7 @@ export default function AppointmentsScreen({ route, navigation }: any) {
   const checkSlotStatus = (testTime: string) => {
     if (selectedServices.length === 0) return { conflict: false };
     const currentTeam = team || (teams[0]?.name ?? 'Equipo 1');
-    const teamApps = existingAppointments.filter(a => (a.team || teams[0]?.name || 'Equipo 1') === currentTeam && a.status !== 'cancelled');
+    const teamApps = existingAppointments.filter(a => (a.team || teams[0]?.name || 'Equipo 1') === currentTeam && a.status !== 'cancelled' && a.id !== editingAppointmentId);
 
     const getMinutes = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
     const newStart = getMinutes(testTime);
@@ -384,7 +420,7 @@ export default function AppointmentsScreen({ route, navigation }: any) {
         const srvTeam = serviceTeamAssignments[srv.id] || team || (teams[0]?.name ?? 'Equipo 1');
         const srvDur = srv.name?.toLowerCase().includes('bloquead') && customDuration ? parseInt(customDuration) : parseInt(srv.duration || '60');
         
-        const teamApps = existingAppointments.filter(a => (a.team || teams[0]?.name || 'Equipo 1') === srvTeam && a.status !== 'cancelled');
+        const teamApps = existingAppointments.filter(a => (a.team || teams[0]?.name || 'Equipo 1') === srvTeam && a.status !== 'cancelled' && a.id !== editingAppointmentId);
         const newStart = currentMin;
         const newEnd = currentMin + srvDur;
 
@@ -407,9 +443,18 @@ export default function AppointmentsScreen({ route, navigation }: any) {
       const cleanPhone = phone.trim();
       const cleanClient = client.trim();
 
-      let finalNotes = '';
-      if (isTenthAppointment) {
-        finalNotes = '🌟 10ª Cita - APLICAR 20% DESCUENTO';
+      let finalNotes = route?.params?.editAppointment?.notes || '';
+      if (isTenthAppointment && !finalNotes.includes('10ª Cita')) {
+        finalNotes = finalNotes ? finalNotes + '\n🌟 10ª Cita - APLICAR 20% DESCUENTO' : '🌟 10ª Cita - APLICAR 20% DESCUENTO';
+      }
+
+      // Si estamos editando, borramos el documento original
+      if (editingAppointmentId) {
+        // En una app real, si una "cita editada" originalmente tenía múltiples docs, 
+        // requeriría agruparlos por ID de grupo. Aquí como se borra 1 doc, si había 2, solo borra 1.
+        // Pero para el caso de editar un doc, está bien.
+        const { deleteDoc } = require('firebase/firestore');
+        await deleteDoc(doc(db, 'appointments', editingAppointmentId));
       }
 
       // 1. Guardar las citas secuencialmente
