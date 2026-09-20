@@ -127,6 +127,30 @@ function TopTabs() {
   );
 }
 
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{flex: 1, padding: 20, justifyContent: 'center', backgroundColor: '#fff'}}>
+          <Text style={{fontSize: 20, fontWeight: 'bold', color: 'red'}}>¡Oops! Hubo un error.</Text>
+          <Text style={{marginTop: 10}}>{String(this.state.error)}</Text>
+          <TouchableOpacity onPress={() => this.setState({hasError: false})} style={{marginTop: 20, padding: 10, backgroundColor: '#D48A9A', borderRadius: 8}}>
+            <Text style={{color: '#fff', textAlign: 'center'}}>Reintentar</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function AppNavigator() {
   const { role, logout, loginAsClient } = useAppContext();
 
