@@ -40,23 +40,24 @@ export default function CalculatorScreen() {
     return () => { unsubApps(); unsubExp(); };
   }, []);
 
-  const handlePay = async (team: string, weekStart: string, amount: string) => {
+  const handlePay = async (team: string, weekStart: string, amount: string, paymentRef: string, description: string) => {
     if (!amount || amount === '0.00' || amount === '0') return alert('El importe no puede ser cero.');
-    if (!window.confirm(`¿Confirmas el pago de ${amount}€ a ${team} por esta semana?`)) return;
+    if (!window.confirm(`¿Confirmas el pago de ${amount}€ a ${team} (${description})?`)) return;
 
     try {
       const { addDoc } = require('firebase/firestore');
       await addDoc(collection(db, 'expenses'), {
         amount,
         category: 'Nómina',
-        description: `Nómina ${team} - Semana ${weekStart}`,
+        description: `Nómina ${team} - ${description}`,
         date: new Date().toISOString().split('T')[0],
         type: 'payroll',
         team,
         week: weekStart,
+        paymentRef, // 'bizum' or 'cash_2024-05-12'
         createdAt: new Date()
       });
-      alert('Pago registrado con éxito. Aparecerá en los gastos del Dashboard.');
+      alert('Pago registrado con éxito.');
     } catch (error) {
       alert('Error al registrar el pago.');
     }
@@ -71,17 +72,23 @@ export default function CalculatorScreen() {
     end.setDate(end.getDate() + 6);
     const endStr = formatYMD(end);
 
-    const byTeam: Record<string, { revenue: number, completedCount: number }> = {};
+    const byTeam: Record<string, { bizum: number, dailyCash: Record<string, number>, completedCount: number }> = {};
 
     appointments.forEach(app => {
       if (!app.date || app.date < startStr || app.date > endStr) return;
       if (app.status === 'completed' && app.paymentStatus === 'paid' && app.finalPrice) {
         const team = app.team || 'Sin asignar';
-        if (!byTeam[team]) byTeam[team] = { revenue: 0, completedCount: 0 };
+        if (!byTeam[team]) byTeam[team] = { bizum: 0, dailyCash: {}, completedCount: 0 };
         
         const price = parseFloat(app.finalPrice) || 0;
-        byTeam[team].revenue += price;
         byTeam[team].completedCount += 1;
+        
+        if (app.paymentMethod === 'bizum') {
+          byTeam[team].bizum += price;
+        } else if (app.paymentMethod === 'cash') {
+          if (!byTeam[team].dailyCash[app.date]) byTeam[team].dailyCash[app.date] = 0;
+          byTeam[team].dailyCash[app.date] += price;
+        }
       }
     });
 
@@ -118,12 +125,16 @@ export default function CalculatorScreen() {
 
       {teams.length > 0 ? (
         teams.map(team => {
-          const revenue = stats.byTeam[team].revenue;
-          const completedCount = stats.byTeam[team].completedCount;
+          const data = stats.byTeam[team];
+          const bizum = data.bizum || 0;
+          const dailyCash = data.dailyCash || {};
+          const cashDays = Object.keys(dailyCash).sort();
+          
+          const completedCount = data.completedCount;
           const pctVal = parseFloat(percentages[team] || '0') || 0;
-          const payout = (revenue * (pctVal / 100)).toFixed(2);
-
-          const isPaid = expenses.find(ex => ex.type === 'payroll' && ex.team === team && ex.week === stats.startStr);
+          
+          const bizumPayout = (bizum * (pctVal / 100)).toFixed(2);
+          const isBizumPaid = expenses.find(ex => ex.type === 'payroll' && ex.team === team && ex.week === stats.startStr && ex.paymentRef === 'bizum');
 
           return (
             <View key={team} style={styles.card}>
@@ -132,44 +143,79 @@ export default function CalculatorScreen() {
                 <Text style={styles.serviceCount}>{completedCount} servicios cobrados</Text>
               </View>
               
-              <View style={styles.calcRow}>
-                <View style={styles.calcCol}>
-                  <Text style={styles.label}>Caja semanal:</Text>
-                  <Text style={styles.revenueText}>{revenue.toFixed(2)} €</Text>
-                </View>
+              <View style={{ alignItems: 'center', marginBottom: 15 }}>
+                <Text style={styles.label}>Comisión a aplicar (%):</Text>
+                <TextInput
+                  style={styles.input}
+                  keyboardType="numeric"
+                  placeholder="Ej: 50"
+                  value={percentages[team] || ''}
+                  onChangeText={(val) => handlePercentageChange(team, val)}
+                />
+              </View>
 
-                <View style={styles.calcColCenter}>
-                  <Text style={styles.label}>Comisión %:</Text>
-                  {isPaid ? (
-                    <Text style={{fontSize: 16, fontWeight: 'bold', color: '#666', marginTop: 10}}>- Cerrado -</Text>
-                  ) : (
-                    <TextInput
-                      style={styles.input}
-                      keyboardType="numeric"
-                      placeholder="Ej: 50"
-                      value={percentages[team] || ''}
-                      onChangeText={(val) => handlePercentageChange(team, val)}
-                    />
-                  )}
+              {/* BIZUM SEMANAL */}
+              <View style={[styles.calcRow, { borderBottomWidth: 1, borderBottomColor: '#eee', paddingBottom: 10, marginBottom: 10 }]}>
+                <View style={styles.calcCol}>
+                  <Text style={styles.label}>Bizum (Semana):</Text>
+                  <Text style={styles.revenueText}>📱 {bizum.toFixed(2)} €</Text>
                 </View>
 
                 <View style={styles.calcColRight}>
-                  <Text style={styles.label}>A Pagar:</Text>
-                  {isPaid ? (
+                  <Text style={styles.label}>A Pagar (Bizum):</Text>
+                  {isBizumPaid ? (
                     <View style={{alignItems: 'center'}}>
-                      <Text style={[styles.payoutText, {color: '#888'}]}>{isPaid.amount} €</Text>
+                      <Text style={[styles.payoutText, {color: '#888'}]}>{isBizumPaid.amount} €</Text>
                       <View style={styles.paidBadge}><Text style={styles.paidBadgeText}>✓ Pagado</Text></View>
                     </View>
                   ) : (
                     <View style={{alignItems: 'center'}}>
-                      <Text style={styles.payoutText}>{payout} €</Text>
-                      <TouchableOpacity style={styles.payBtn} onPress={() => handlePay(team, stats.startStr, payout)}>
+                      <Text style={styles.payoutText}>{bizumPayout} €</Text>
+                      <TouchableOpacity style={styles.payBtn} onPress={() => handlePay(team, stats.startStr, bizumPayout, 'bizum', `Bizum Semanal`)}>
                         <Text style={styles.payBtnText}>Marcar Pagado</Text>
                       </TouchableOpacity>
                     </View>
                   )}
                 </View>
               </View>
+
+              {/* EFECTIVO DIARIO */}
+              <Text style={[styles.label, { marginTop: 5, marginBottom: 10 }]}>Efectivo (Diario):</Text>
+              {cashDays.length === 0 ? (
+                <Text style={styles.noDataText}>No hubo cobros en efectivo.</Text>
+              ) : (
+                cashDays.map(dayStr => {
+                  const cashVal = dailyCash[dayStr] || 0;
+                  const cashPayout = (cashVal * (pctVal / 100)).toFixed(2);
+                  const isCashPaid = expenses.find(ex => ex.type === 'payroll' && ex.team === team && ex.week === stats.startStr && ex.paymentRef === `cash_${dayStr}`);
+
+                  return (
+                    <View key={dayStr} style={[styles.calcRow, { marginBottom: 15 }]}>
+                      <View style={styles.calcCol}>
+                        <Text style={[styles.label, {color: '#555'}]}>Día {dayStr.split('-').reverse().join('/')}:</Text>
+                        <Text style={[styles.revenueText, {fontSize: 15, color: '#4a9b40'}]}>💵 {cashVal.toFixed(2)} €</Text>
+                      </View>
+
+                      <View style={styles.calcColRight}>
+                        <Text style={styles.label}>A Pagar:</Text>
+                        {isCashPaid ? (
+                          <View style={{alignItems: 'center'}}>
+                            <Text style={[styles.payoutText, {color: '#888', fontSize: 16}]}>{isCashPaid.amount} €</Text>
+                            <View style={styles.paidBadge}><Text style={styles.paidBadgeText}>✓ Pagado</Text></View>
+                          </View>
+                        ) : (
+                          <View style={{alignItems: 'center'}}>
+                            <Text style={[styles.payoutText, {fontSize: 16}]}>{cashPayout} €</Text>
+                            <TouchableOpacity style={[styles.payBtn, {backgroundColor: '#4a9b40', paddingVertical: 6, paddingHorizontal: 10}]} onPress={() => handlePay(team, stats.startStr, cashPayout, `cash_${dayStr}`, `Efectivo día ${dayStr}`)}>
+                              <Text style={[styles.payBtnText, {fontSize: 11}]}>Marcar Pagado</Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  );
+                })
+              )}
             </View>
           );
         })
