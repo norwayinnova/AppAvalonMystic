@@ -312,31 +312,35 @@ export default function AppointmentsScreen({ route, navigation }: any) {
       });
 
       // 2. Gestionar la ficha de Cliente (Crear nuevo o Actualizar existente)
-      if (cleanPhone) {
-        const qClient = query(collection(db, 'clients'), where('phone', '==', cleanPhone));
-        const snap = await getDocs(qClient);
+      try {
+        if (cleanPhone) {
+          const qClient = query(collection(db, 'clients'), where('phone', '==', cleanPhone));
+          const snap = await getDocs(qClient);
 
-        if (!snap.empty) {
-          // Cliente existente: actualizar datos si cambiaron
-          const existingDoc = snap.docs[0];
-          await updateDoc(doc(db, 'clients', existingDoc.id), {
-            name: cleanClient,
-            address: finalAddress,
-            detailedInfo: detailedInfo.trim(),
-            lastServiceDate: date,
-            updatedAt: new Date()
-          });
-        } else {
-          // Cliente nuevo: registrar en cartera de clientes
-          await addDoc(collection(db, 'clients'), {
-            name: cleanClient,
-            phone: cleanPhone,
-            address: finalAddress,
-            detailedInfo: detailedInfo.trim(),
-            createdAt: new Date(),
-            lastServiceDate: date
-          });
+          if (!snap.empty) {
+            // Cliente existente: actualizar datos si cambiaron
+            const existingDoc = snap.docs[0];
+            await updateDoc(doc(db, 'clients', existingDoc.id), {
+              name: cleanClient,
+              address: finalAddress,
+              detailedInfo: detailedInfo.trim(),
+              lastServiceDate: date,
+              updatedAt: new Date()
+            });
+          } else {
+            // Cliente nuevo: registrar en cartera de clientes
+            await addDoc(collection(db, 'clients'), {
+              name: cleanClient,
+              phone: cleanPhone,
+              address: finalAddress,
+              detailedInfo: detailedInfo.trim(),
+              createdAt: new Date(),
+              lastServiceDate: date
+            });
+          }
         }
+      } catch (clientErr) {
+        console.warn("Aviso: La cita se creó, pero hubo un problema al actualizar la ficha del cliente.", clientErr);
       }
 
       // Resetear estado
@@ -353,9 +357,11 @@ export default function AppointmentsScreen({ route, navigation }: any) {
       setPrice('');
       setSelectedService(null);
       setSmartSuggestion(null);
+      alert("Cita creada correctamente");
       navigation.navigate('Calendar');
     } catch (error) {
-      alert("Error al guardar la cita.");
+      console.error("Detalle del error:", error);
+      alert("Error al guardar la cita. Comprueba tu conexión.");
     }
   };
 
