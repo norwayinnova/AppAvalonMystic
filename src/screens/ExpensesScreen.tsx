@@ -350,6 +350,7 @@ export default function ExpensesScreen() {
         <ActivityIndicator size="large" color="#d9534f" />
       ) : (
         <FlatList
+          style={{ flex: 1 }}
           data={expenses}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
