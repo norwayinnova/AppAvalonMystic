@@ -41,7 +41,7 @@ export default function AppointmentsScreen({ route, navigation }: any) {
   const [showCalendar, setShowCalendar] = useState(false);
   
   const [services, setServices] = useState<any[]>([]);
-  const [selectedService, setSelectedService] = useState<any>(null);
+  const [selectedServices, setSelectedServices] = useState<any[]>([]);
   
   const [existingAppointments, setExistingAppointments] = useState<any[]>([]);
   const [smartSuggestion, setSmartSuggestion] = useState<any>(null);
@@ -279,26 +279,43 @@ export default function AppointmentsScreen({ route, navigation }: any) {
   };
 
   const handleSelectService = (srv: any) => {
-    setSelectedService(srv);
-    if (srv.price && !price) {
-      setPrice(srv.price);
+    setSelectedServices(prev => {
+      const isSelected = prev.find(s => s.id === srv.id);
+      let newServices;
+      if (isSelected) {
+        newServices = prev.filter(s => s.id !== srv.id);
+      } else {
+        newServices = [...prev, srv];
+      }
+      
+      // Actualizar precio total
+      const totalPrice = newServices.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
+      setPrice(totalPrice > 0 ? totalPrice.toString() : '');
+      
+      return newServices;
+    });
+  };
+
+  const getCombinedDuration = () => {
+    if (selectedServices.length === 0) return 0;
+    const isAnyBloqueo = selectedServices.some(s => s.name?.toLowerCase().includes('bloquead'));
+    if (isAnyBloqueo && customDuration) {
+      return parseInt(customDuration);
     }
+    return selectedServices.reduce((sum, s) => sum + parseInt(s.duration || '0'), 0);
   };
 
   const checkSlotStatus = (testTime: string) => {
-    if (!selectedService) return { conflict: false };
+    if (selectedServices.length === 0) return { conflict: false };
     const currentTeam = team || (teams[0]?.name ?? 'Equipo 1');
     const teamApps = existingAppointments.filter(a => (a.team || teams[0]?.name || 'Equipo 1') === currentTeam && a.status !== 'cancelled');
 
     const getMinutes = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
     const newStart = getMinutes(testTime);
     
-    let durationToUse = selectedService.duration;
-    if (selectedService.name.toLowerCase().includes('bloquead') && customDuration) {
-      durationToUse = customDuration;
-    }
+    const durationToUse = getCombinedDuration();
+    const newEnd = newStart + durationToUse;
     
-    const newEnd = newStart + parseInt(durationToUse || '60');
     for (const app of teamApps) {
       const existingStart = getMinutes(app.time);
       const existingEnd = existingStart + parseInt(app.duration);
@@ -307,8 +324,6 @@ export default function AppointmentsScreen({ route, navigation }: any) {
 
       if (newStart < existingEnd && newEnd > existingStart) {
         if (isBloqueo && newStart < existingStart) {
-          // El usuario ha indicado que un bloqueo no afecta a las horas previas
-          // (ej: si se bloquea a las 14:00, una cita de 60m a las 13:30 sí puede entrar)
           continue;
         }
         return { conflict: true, reason: `⚠️ Solapamiento: Ya hay una cita de ${app.time} a ${Math.floor(existingEnd/60).toString().padStart(2,'0')}:${(existingEnd%60).toString().padStart(2,'0')}.` };
@@ -320,22 +335,16 @@ export default function AppointmentsScreen({ route, navigation }: any) {
 
 
   const saveAppointment = async () => {
-    if (!client.trim() || !date || (!time && !isFullDayBlock) || (!selectedService && !isFullDayBlock)) {
+    if (!client.trim() || !date || (!time && !isFullDayBlock) || (selectedServices.length === 0 && !isFullDayBlock)) {
       alert("Por favor, rellena los campos obligatorios (cliente, servicio, fecha y hora).");
       return;
     }
 
     const finalAddress = '';
-    
     const finalTime = isFullDayBlock ? '09:00' : time;
-    
-    let durationToUse = selectedService?.duration || '60';
-    if (selectedService?.name?.toLowerCase().includes('bloquead') && customDuration) {
-      durationToUse = customDuration;
-    }
-    const finalDuration = isFullDayBlock ? '660' : durationToUse;
-    
-    const finalServiceName = isFullDayBlock ? 'Bloqueo Completo' : selectedService?.name || 'Bloqueo';
+    const finalDuration = isFullDayBlock ? '660' : getCombinedDuration().toString();
+    const joinedNames = selectedServices.map(s => s.name).join(' + ');
+    const finalServiceName = isFullDayBlock ? 'Bloqueo Completo' : joinedNames || 'Bloqueo';
 
     if (!isFullDayBlock) {
       const status = checkSlotStatus(finalTime);
@@ -415,7 +424,7 @@ export default function AppointmentsScreen({ route, navigation }: any) {
       setDetailedInfo('');
       setIsValidated(false);
       setPrice('');
-      setSelectedService(null);
+      setSelectedServices([]);
       setSmartSuggestion(null);
       alert("Cita creada correctamente");
       navigation.navigate('Calendar');
@@ -434,8 +443,8 @@ export default function AppointmentsScreen({ route, navigation }: any) {
   }
 
   let activeTeamsList = teams.length > 0 ? teams.map(t => t.name) : ['Equipo 1', 'Equipo 2'];
-  if (selectedService?.allowedTeams && selectedService.allowedTeams.length > 0) {
-    activeTeamsList = activeTeamsList.filter(t => selectedService.allowedTeams.includes(t));
+  if (selectedServices.length > 0) {
+    activeTeamsList = activeTeamsList.filter(t => selectedServices.every(s => !s.allowedTeams || s.allowedTeams.length === 0 || s.allowedTeams.includes(t)));
   }
 
   return (
@@ -514,16 +523,15 @@ export default function AppointmentsScreen({ route, navigation }: any) {
       
 
 
-      <Text style={styles.subtitle}>1. Servicio:</Text>
+      <Text style={styles.subtitle}>1. Servicio(s):</Text>
       <TouchableOpacity 
         style={styles.dropdownBtn} 
         onPress={() => {
-          // Toggle custom dropdown state (we can just use showCalendar logic or inline it)
           setCustomDuration(customDuration === 'show_services' ? '' : 'show_services');
         }}
       >
         <Text style={styles.dropdownText}>
-          {selectedService ? `✨ ${selectedService.name} (⏱ ${selectedService.duration}m)` : '▼ Seleccionar servicio...'}
+          {selectedServices.length > 0 ? `✨ ${selectedServices.map(s => s.name).join(' + ')} (⏱ ${getCombinedDuration()}m)` : '▼ Seleccionar servicio(s)...'}
         </Text>
       </TouchableOpacity>
 
@@ -560,31 +568,41 @@ export default function AppointmentsScreen({ route, navigation }: any) {
                   </Text>
                   <Text style={{ color: '#666' }}>{isExpanded ? '▲' : '▼'}</Text>
                 </TouchableOpacity>
-                {isExpanded && catServices.map(srv => (
-                  <TouchableOpacity 
-                    key={srv.id} 
-                    style={[styles.dropdownItem, selectedService?.id === srv.id && styles.dropdownItemSelected, { paddingLeft: 15 }]}
-                    onPress={() => {
-                      handleSelectService(srv);
-                      setCustomDuration('');
-                      setServiceSearch('');
-                    }}
-                  >
-                    <Text style={[styles.dropdownItemText, selectedService?.id === srv.id && styles.dropdownItemTextSelected]}>
-                      ✨ {srv.name} (⏱ {srv.duration} min)
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                {isExpanded && catServices.map(srv => {
+                  const isSelected = selectedServices.some(s => s.id === srv.id);
+                  return (
+                    <TouchableOpacity 
+                      key={srv.id} 
+                      style={[styles.dropdownItem, isSelected && styles.dropdownItemSelected, { paddingLeft: 15 }]}
+                      onPress={() => {
+                        handleSelectService(srv);
+                        // Don't close the dropdown automatically so they can pick more
+                      }}
+                    >
+                      <Text style={[styles.dropdownItemText, isSelected && styles.dropdownItemTextSelected]}>
+                        {isSelected ? '✓ ' : '✨ '} {srv.name} (⏱ {srv.duration} min)
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             );
           })}
           {services.filter(s => s.name.toLowerCase().includes(serviceSearch.toLowerCase())).length === 0 && (
             <Text style={{ textAlign: 'center', color: '#999', padding: 10 }}>No se encontraron servicios</Text>
           )}
+
+          {/* Botón para cerrar el menú desplegable */}
+          <TouchableOpacity 
+            style={{ backgroundColor: '#D48A9A', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 10 }}
+            onPress={() => setCustomDuration('')}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Cerrar y Aceptar</Text>
+          </TouchableOpacity>
         </View>
       )}
 
-      {selectedService?.name?.toLowerCase().includes('bloquead') && !isFullDayBlock && (
+      {selectedServices.some(s => s.name?.toLowerCase().includes('bloquead')) && !isFullDayBlock && (
         <View style={{ marginBottom: 12, marginTop: 10 }}>
           <Text style={styles.inputLabel}>Duración del bloqueo (en minutos):</Text>
           <TextInput
