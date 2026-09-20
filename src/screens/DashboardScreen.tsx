@@ -43,7 +43,7 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   
   // Filtros y Vista
-  const [dateFilter, setDateFilter] = useState<'week'|'month'|'year'|'all'>('month');
+  const [dateFilter, setDateFilter] = useState<'day'|'week'|'month'|'year'|'all'>('month');
   const [showSettings, setShowSettings] = useState(false);
   const [widgets, setWidgets] = useState({
     chart: true,
@@ -101,7 +101,10 @@ export default function DashboardScreen() {
     let endStr = '2100-01-01';
     const now = new Date();
     
-    if (dateFilter === 'week') {
+    if (dateFilter === 'day') {
+      startStr = formatYMD(now);
+      endStr = formatYMD(now);
+    } else if (dateFilter === 'week') {
       startStr = formatYMD(getStartOfWeek(now));
       const end = new Date(getStartOfWeek(now)); end.setDate(end.getDate() + 6);
       endStr = formatYMD(end);
@@ -160,7 +163,8 @@ export default function DashboardScreen() {
             byTeam[team].otro += price;
           }
 
-          chartDataMap[app.date] = (chartDataMap[app.date] || 0) + price;
+          const chartKey = dateFilter === 'day' ? `${app.date}-${app.time ? app.time.split(':')[0] : '00'}` : app.date;
+          chartDataMap[chartKey] = (chartDataMap[chartKey] || 0) + price;
         }
 
         if (app.paymentStatus === 'pending') {
@@ -189,7 +193,16 @@ export default function DashboardScreen() {
 
     let chartLabels: string[] = [];
     let chartValues: number[] = [];
-    if (dateFilter === 'week') {
+    if (dateFilter === 'day') {
+      const activeHours = ['09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
+      chartLabels = activeHours.map(h => `${h}h`);
+      chartValues = Array(activeHours.length).fill(0);
+      Object.keys(chartDataMap).forEach(k => {
+        const h = k.split('-')[3]; // e.g. "2024-05-12-14" => split is [2024, 05, 12, 14]
+        const idx = activeHours.indexOf(h);
+        if (idx !== -1) chartValues[idx] += chartDataMap[k];
+      });
+    } else if (dateFilter === 'week') {
       const days = ['L','M','X','J','V','S','D'];
       let cur = new Date(startStr);
       for(let i=0; i<7; i++) {
@@ -362,6 +375,9 @@ export default function DashboardScreen() {
       </View>
 
       <View style={styles.filterBar}>
+        <TouchableOpacity style={[styles.filterBtn, dateFilter === 'day' && styles.filterBtnActive]} onPress={() => setDateFilter('day')}>
+          <Text style={[styles.filterText, dateFilter === 'day' && styles.filterTextActive]}>Día</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={[styles.filterBtn, dateFilter === 'week' && styles.filterBtnActive]} onPress={() => setDateFilter('week')}>
           <Text style={[styles.filterText, dateFilter === 'week' && styles.filterTextActive]}>Semana</Text>
         </TouchableOpacity>
